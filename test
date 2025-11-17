@@ -1,5 +1,0 @@
-const test = {
-    testfunc: function() {
-        console.log("this is a test");
-    }
-};
