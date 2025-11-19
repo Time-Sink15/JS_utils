@@ -39,7 +39,13 @@
     white-space: nowrap; 
     flex-shrink: 0;
 }
-
+/* Line between tabs and content */
+#${id} .tm-tab-separator {
+    height: 1px;
+    width: 100%;
+    background-color: rgba(0,0,0,0.1); /* default, theme will override */
+    flex-shrink: 0;
+}
 /* Tab buttons */
 #${id} .tm-tabrow .tm-tab-btn {
     flex: 0 0 auto;     /* prevent shrinking, don't grow */
@@ -92,15 +98,19 @@
         const style = document.createElement('style');
         style.textContent = css;
         document.head.appendChild(style);
+const tabRow = document.createElement('div');
+tabRow.className = 'tm-tabrow';
 
-        const tabRow = document.createElement('div');
-        tabRow.className = 'tm-tabrow';
+const tabSeparator = document.createElement('div');
+tabSeparator.className = 'tm-tab-separator';
 
-        const body = document.createElement('div');
-        body.className = 'tm-body';
+const body = document.createElement('div');
+body.className = 'tm-body';
 
-        container.appendChild(tabRow);
-        container.appendChild(body);
+container.appendChild(tabRow);
+container.appendChild(tabSeparator);  // <- separator between tabs and content
+container.appendChild(body);
+
         document.body.appendChild(container);
 
         const tabs = [];
