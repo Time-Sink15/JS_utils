@@ -311,6 +311,7 @@ function applySmoothTheme(panels) {
 applySmoothTheme([document.querySelector("#tm-panel-123456789")]);
 // OR for multiple panels:
 applySmoothTheme(Array.from(document.querySelectorAll("[id^='tm-panel-']")));
+setInterval(() => applySmoothTheme([tmPanel.container]), 0);
 
     const tmPanel = createTMPanel();
     window.tmPanel = tmPanel;
