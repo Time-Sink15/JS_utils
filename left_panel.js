@@ -40,7 +40,6 @@
     height: 8px;           /* optional scrollbar height */
 }
 
-            #${id} .tm-tabrow::-webkit-scrollbar { height: 8px; }
             #${id} .tm-tabrow .tm-tab-btn {
                 padding: 6px 10px;
                 border-radius: 6px;
