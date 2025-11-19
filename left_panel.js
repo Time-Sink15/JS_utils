@@ -7,51 +7,60 @@
         container.id = id;
 
         const css = `
-            #${id} {
-                position: fixed;
-                left: 12px;
-                top: 12px;
-                width: 360px;
-                height: 520px;
-                background: rgba(255,255,255,0.97);
-                border: 1px solid rgba(0,0,0,0.2);
-                box-shadow: 0 6px 18px rgba(0,0,0,0.12);
-                z-index: 999999999;
-                display: flex;
-                flex-direction: column;
-                font-family: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial;
-                color: #111;
-                border-radius: 8px;
-                overflow: hidden;
-            }
-            #${id} .tm-tabrow {
-                display: flex;
-                align-items: center;
-                gap: 6px;
-                padding: 6px;
-                min-height: 38px;
-                max-height: 38px;
-            
-                overflow-x: auto;     /* enable horizontal scroll */
-                overflow-y: hidden;   /* hide vertical scrollbar */
-                white-space: nowrap;  /* prevent wrapping */
-                flex-shrink: 0;       /* prevent shrinking */
-            }
-            
-            #${id} .tm-tabrow .tm-tab-btn {
-                padding: 6px 10px;
-                border-radius: 6px;
-                background: transparent;
-                border: 1px solid transparent;
-                cursor: pointer;
-                font-size: 13px;
-                white-space: nowrap;     /* prevent wrapping inside button */
-                flex-shrink: 0;          /* prevent flexbox from shrinking button */
-            }
-            
-            #${id} .tm-tabrow::-webkit-scrollbar {
-                height: 8px;            /* optional scrollbar height */
-            }
+            /* Panel container on left side */
+#${id} {
+    position: fixed;
+    left: 12px;
+    top: 12px;
+    width: 360px;
+    height: 520px;
+    display: flex;
+    flex-direction: column;
+    border-radius: 8px;
+    background: rgba(255,255,255,0.97);
+    border: 1px solid rgba(0,0,0,0.2);
+    box-shadow: 0 6px 18px rgba(0,0,0,0.12);
+    z-index: 999999999;
+    overflow: hidden;
+}
+
+/* Tab row */
+#${id} .tm-tabrow {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    gap: 6px;
+    padding: 6px;
+    min-height: 38px;
+    max-height: 38px;
+
+    overflow-x: auto;   /* enable horizontal scroll */
+    overflow-y: hidden;
+    white-space: nowrap; 
+    flex-shrink: 0;
+}
+
+/* Tab buttons */
+#${id} .tm-tabrow .tm-tab-btn {
+    flex: 0 0 auto;     /* prevent shrinking, don't grow */
+    padding: 6px 10px;
+    border-radius: 6px;
+    background: transparent;
+    border: 1px solid transparent;
+    cursor: pointer;
+    font-size: 13px;
+    white-space: nowrap;  /* don't wrap inside button */
+}
+
+/* Optional: scrollbar style */
+#${id} .tm-tabrow::-webkit-scrollbar {
+    height: 8px;
+}
+
+#${id} .tm-tabrow {
+    scroll-behavior: smooth;
+}
+
             #${id} .tm-tabrow .tm-tab-btn.active {
                 background: white;
                 border-color: rgba(0,0,0,0.08);
