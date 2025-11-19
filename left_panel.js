@@ -131,31 +131,33 @@ tabRow,
 body,
 tabs,
 currentTab: () => currentTab,
-newTab(title = 'Tab') {
-    const tid = 'tm-tab-' + Math.floor(Math.random() * 1e9);
-    const btn = document.createElement('button');
-    btn.className = 'tm-tab-btn';
-    btn.textContent = title;
-    btn.title = title;
 
-    const content = document.createElement('div');
-    content.className = 'tm-tab-content';
-    content.style.padding = '6px 2px';
+            newTab(title = 'Tab') {
+                const tid = 'tm-tab-' + Math.floor(Math.random() * 1e9);
+                const btn = document.createElement('button');
+                btn.className = 'tm-tab-btn';
+                btn.textContent = title;
+                btn.title = title;
 
-    tabRow.appendChild(btn);
-    body.appendChild(content);
+                const content = document.createElement('div');
+                content.className = 'tm-tab-content';
+                content.style.padding = '6px 2px';
 
-    const tab = { id: tid, title, btn, content };
-    tabs.push(tab);
+                tabRow.appendChild(btn);
+                body.appendChild(content);
 
-    btn.addEventListener('click', () => {
-        activateTab(tid);
-    });
+                const tab = { id: tid, title, btn, content };
+                tabs.push(tab);
 
-    activateTab(tid); // currently activates this tab immediately
-
-    return tab;
+                btn.addEventListener('click', () => {
+                    activateTab(tid);
+                });
+if (tabs.length === 1) {
+    activateTab(tid);
 }
+
+                return tab;
+            },
 
 
 selectTab(identifier) {
