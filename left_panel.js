@@ -43,7 +43,7 @@ const css = `
 #${id} .tm-tab-separator {
    height: 1px;
    width: 100%;
-    background-color: '#888888'
+    background-color: #888888
    flex-shrink: 0;
 }
 /* Tab buttons */
