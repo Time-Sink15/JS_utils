@@ -31,15 +31,13 @@
                 padding: 6px;
                 min-height: 38px;
                 max-height: 38px;
-                overflow-x: auto;
-                white-space: nowrap;
-                background: linear-gradient(180deg, #f8f8f8, #efefef);
-                border-bottom: 1px solid rgba(0,0,0,0.06);
+            
+                overflow-x: auto;     /* enable horizontal scroll */
+                overflow-y: hidden;   /* hide vertical scrollbar */
+                white-space: nowrap;  /* prevent wrapping */
+                flex-shrink: 0;       /* prevent shrinking */
             }
-            #${id} .tm-tabrow::-webkit-scrollbar {
-                height: 8px;
-            }
-
+            
             #${id} .tm-tabrow .tm-tab-btn {
                 padding: 6px 10px;
                 border-radius: 6px;
@@ -47,10 +45,12 @@
                 border: 1px solid transparent;
                 cursor: pointer;
                 font-size: 13px;
-                white-space: nowrap;
-                overflow: hidden;
-                text-overflow: ellipsis;
-                max-width: 160px;
+                white-space: nowrap;     /* prevent wrapping inside button */
+                flex-shrink: 0;          /* prevent flexbox from shrinking button */
+            }
+            
+            #${id} .tm-tabrow::-webkit-scrollbar {
+                height: 8px;            /* optional scrollbar height */
             }
             #${id} .tm-tabrow .tm-tab-btn.active {
                 background: white;
