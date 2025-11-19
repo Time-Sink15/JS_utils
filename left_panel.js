@@ -43,7 +43,7 @@ const css = `
 #${id} .tm-tab-separator {
    height: 1px;
    width: 100%;
-   background-color: rgba(0,0,0,0.1); /* default, theme will override */
+    background-color: #888888;
    flex-shrink: 0;
 }
 /* Tab buttons */
@@ -313,17 +313,6 @@ btn.style.backgroundColor = buttonBg;
 // Separator lines
 panel.querySelectorAll(".tm-separator").forEach(line => {
 line.style.backgroundColor = lineColor;
-});
-           panel.querySelectorAll(".tm-tab-separator").forEach(line => {
-    // Parse the rgb string to numbers
-    const match = lineColor.match(/\d+/g);
-    if (match) {
-        const [r,g,b] = match.map(Number);
-        line.style.backgroundColor = `rgba(${r},${g},${b},0.5)`; // 50% opacity
-    } else {
-        // fallback
-        line.style.backgroundColor = 'rgba(0,0,0,0.5)';
-    }
 });
 
 });
