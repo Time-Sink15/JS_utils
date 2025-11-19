@@ -279,7 +279,7 @@ function applySmoothTheme(panels) {
     const t = 1 - brightness; // how dark we should be
 
     const textLight = [0, 0, 0], textDark = [255, 255, 255];
-    const borderLight = [68, 68, 68], borderDark = [204, 204, 204];
+    const borderLight = [68, 68, 68], borderDark = [187,187,187];
     const buttonLight = [246, 246, 246], buttonDark = [51, 51, 51];
     const panelLight = [255, 255, 255], panelDark = [0, 0, 0];
     const lineLight = [0, 0, 0], lineDark = [204, 204, 204];
