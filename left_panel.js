@@ -102,7 +102,7 @@ const tabRow = document.createElement('div');
 tabRow.className = 'tm-tabrow';
 
 const tabSeparator = document.createElement('div');
-tabSeparator.className = 'tm-separator';
+tabSeparator.className = 'tm-tab-separator';
 
 const body = document.createElement('div');
 body.className = 'tm-body';
@@ -312,6 +312,9 @@ function applySmoothTheme(panels) {
 
         // Separator lines
         panel.querySelectorAll(".tm-separator").forEach(line => {
+            line.style.backgroundColor = lineColor;
+        });
+        panel.querySelectorAll(".tm-tab-separator").forEach(line => {
             line.style.backgroundColor = lineColor;
         });
     });
