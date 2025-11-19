@@ -314,17 +314,24 @@ btn.style.backgroundColor = buttonBg;
 panel.querySelectorAll(".tm-separator").forEach(line => {
 line.style.backgroundColor = lineColor;
 });
+           panel.querySelectorAll(".tm-tab-separator").forEach(line => {
+    // Parse the rgb string to numbers
+    const match = lineColor.match(/\d+/g);
+    if (match) {
+        const [r,g,b] = match.map(Number);
+        line.style.backgroundColor = `rgba(${r},${g},${b},0.5)`; // 50% opacity
+    } else {
+        // fallback
+        line.style.backgroundColor = 'rgba(0,0,0,0.5)';
+    }
+});
+
 });
 }
 
-// Usage: pass array of panel containers
-applySmoothTheme([document.querySelector("#tm-panel-123456789")]);
-// OR for multiple panels:
-applySmoothTheme(Array.from(document.querySelectorAll("[id^='tm-panel-']")));
 setTimeout(() => {
     setInterval(() => applySmoothTheme([tmPanel.container]), 0);
 }, 500);
-    setInterval(() => applySmoothTheme([tmPanel.container]), 50);
 
 const tmPanel = createTMPanel();
 window.tmPanel = tmPanel;
