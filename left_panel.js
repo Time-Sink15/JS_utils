@@ -317,8 +317,9 @@ function applySmoothTheme(panels) {
     });
 }
 
-    setInterval(() => applySmoothTheme([tmPanel.container]), 50);
-
+setTimeout(() => {
+    setInterval(() => applySmoothTheme([tmPanel.container]), 0);
+},500);
     const tmPanel = createTMPanel();
     window.tmPanel = tmPanel;
     window.tm = tmPanel;
