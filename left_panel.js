@@ -317,13 +317,7 @@ function applySmoothTheme(panels) {
     });
 }
 
-// Usage: pass array of panel containers
-applySmoothTheme([document.querySelector("#tm-panel-123456789")]);
-// OR for multiple panels:
-applySmoothTheme(Array.from(document.querySelectorAll("[id^='tm-panel-']")));
-setTimeout(() => {
-    setInterval(() => applySmoothTheme([tmPanel.container]), 0);
-}, 500);
+    setInterval(() => applySmoothTheme([tmPanel.container]), 50);
 
     const tmPanel = createTMPanel();
     window.tmPanel = tmPanel;
