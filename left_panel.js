@@ -131,32 +131,32 @@ tabRow,
 body,
 tabs,
 currentTab: () => currentTab,
-
 newTab(title = 'Tab') {
-const tid = 'tm-tab-' + Math.floor(Math.random() * 1e9);
-const btn = document.createElement('button');
-btn.className = 'tm-tab-btn';
-btn.textContent = title;
-btn.title = title;
+    const tid = 'tm-tab-' + Math.floor(Math.random() * 1e9);
+    const btn = document.createElement('button');
+    btn.className = 'tm-tab-btn';
+    btn.textContent = title;
+    btn.title = title;
 
-const content = document.createElement('div');
-content.className = 'tm-tab-content';
-content.style.padding = '6px 2px';
+    const content = document.createElement('div');
+    content.className = 'tm-tab-content';
+    content.style.padding = '6px 2px';
 
-tabRow.appendChild(btn);
-body.appendChild(content);
+    tabRow.appendChild(btn);
+    body.appendChild(content);
 
-const tab = { id: tid, title, btn, content };
-tabs.push(tab);
+    const tab = { id: tid, title, btn, content };
+    tabs.push(tab);
 
-btn.addEventListener('click', () => {
-activateTab(tid);
-});
+    btn.addEventListener('click', () => {
+        activateTab(tid);
+    });
 
-activateTab(tid);
+    activateTab(tid); // currently activates this tab immediately
 
-return tab;
-},
+    return tab;
+}
+
 
 selectTab(identifier) {
 const t = tabs.find(tt => tt.id === identifier || tt.title === identifier);
