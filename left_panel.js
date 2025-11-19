@@ -314,6 +314,9 @@ function applySmoothTheme(panels) {
         panel.querySelectorAll(".tm-separator").forEach(line => {
             line.style.backgroundColor = lineColor;
         });
+        panel.querySelectorAll(".tm-tab-separator").forEach(line => {
+            line.style.backgroundColor = lineColor;
+        });.
     });
 }
 
