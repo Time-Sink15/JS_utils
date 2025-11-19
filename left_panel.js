@@ -102,7 +102,7 @@ const tabRow = document.createElement('div');
 tabRow.className = 'tm-tabrow';
 
 const tabSeparator = document.createElement('div');
-tabSeparator.className = 'tab-separator';
+tabSeparator.className = 'tm-separator';
 
 const body = document.createElement('div');
 body.className = 'tm-body';
