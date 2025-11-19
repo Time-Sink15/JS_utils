@@ -181,7 +181,6 @@
             createButton(text, parent, onClick) {
                 const btn = document.createElement('button');
                 btn.textContent = text;
-                btn.style.fontWeight = 'bold';
                 btn.className = 'tm-btn';
                 btn.style.margin = '2px';
                 btn.style.padding = '2px 5px';
@@ -194,7 +193,6 @@
                 const row = api.makeRowContainer();
                 const btn = document.createElement('button');
                 btn.textContent = text;
-                btn.style.fontWeight = 'bold';
                 btn.style.margin = '2px';
                 btn.className = 'tm-btn';
                 btn.style.padding = '2px 5px';
@@ -248,6 +246,71 @@
 
         return api;
     }
+function lerpColor(color1, color2, t) {
+    return color1.map((c, i) => Math.round(c + (color2[i] - c) * t));
+}
+
+function rgbToCss(rgb) {
+    return `rgb(${rgb[0]},${rgb[1]},${rgb[2]})`;
+}
+
+function getBackgroundBrightness() {
+    const bg = getComputedStyle(document.body).backgroundColor;
+    const match = bg.match(/\d+/g);
+    if (!match) return 255;
+    const [r, g, b] = match.map(Number);
+    // Perceived brightness
+    return (0.299 * r + 0.587 * g + 0.114 * b);
+}
+
+// panels: array of panel containers
+function applySmoothTheme(panels) {
+    const brightness = getBackgroundBrightness() / 255; // 0=dark, 1=bright
+    const t = 1 - brightness; // how dark we should be
+
+    const textLight = [0, 0, 0], textDark = [255, 255, 255];
+    const borderLight = [68, 68, 68], borderDark = [204, 204, 204];
+    const buttonLight = [246, 246, 246], buttonDark = [51, 51, 51];
+    const panelLight = [255, 255, 255], panelDark = [0, 0, 0];
+    const lineLight = [0, 0, 0], lineDark = [204, 204, 204];
+
+    const textColor = rgbToCss(lerpColor(textLight, textDark, t));
+    const borderColor = rgbToCss(lerpColor(borderLight, borderDark, t));
+    const buttonBg = rgbToCss(lerpColor(buttonLight, buttonDark, t));
+    const panelBg = `rgba(${lerpColor(panelLight, panelDark, t).join(",")},0.9)`;
+    const lineColor = rgbToCss(lerpColor(lineLight, lineDark, t));
+
+    panels.forEach(panel => {
+        // Panel container
+        panel.style.color = textColor;
+        panel.style.borderColor = borderColor;
+        panel.style.backgroundColor = panelBg;
+
+        // Tab buttons
+        panel.querySelectorAll(".tm-tab-btn").forEach(btn => {
+            btn.style.color = textColor;
+            btn.style.borderColor = borderColor;
+            btn.style.backgroundColor = buttonBg;
+        });
+
+        // Body buttons
+        panel.querySelectorAll(".tm-btn").forEach(btn => {
+            btn.style.color = textColor;
+            btn.style.borderColor = borderColor;
+            btn.style.backgroundColor = buttonBg;
+        });
+
+        // Separator lines
+        panel.querySelectorAll(".tm-separator").forEach(line => {
+            line.style.backgroundColor = lineColor;
+        });
+    });
+}
+
+// Usage: pass array of panel containers
+applySmoothTheme([document.querySelector("#tm-panel-123456789")]);
+// OR for multiple panels:
+applySmoothTheme(Array.from(document.querySelectorAll("[id^='tm-panel-']")));
 
     const tmPanel = createTMPanel();
     window.tmPanel = tmPanel;
