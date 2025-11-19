@@ -181,7 +181,7 @@
             createButton(text, parent, onClick) {
                 const btn = document.createElement('button');
                 btn.textContent = text;
-                label.style.fontWeight = 'bold';
+                btn.style.fontWeight = 'bold';
                 btn.className = 'tm-btn';
                 btn.style.margin = '2px';
                 btn.style.padding = '2px 5px';
@@ -194,7 +194,7 @@
                 const row = api.makeRowContainer();
                 const btn = document.createElement('button');
                 btn.textContent = text;
-                label.style.fontWeight = 'bold';
+                btn.style.fontWeight = 'bold';
                 btn.style.margin = '2px';
                 btn.className = 'tm-btn';
                 btn.style.padding = '2px 5px';
