@@ -9,7 +9,7 @@
         const css = `
             #${id} {
                 position: fixed;
-                right: 12px;
+                left: 12px;
                 top: 12px;
                 width: 360px;
                 height: 520px;
@@ -25,16 +25,21 @@
                 overflow: hidden;
             }
             #${id} .tm-tabrow {
-                display: flex;
-                align-items: center;
-                gap: 6px;
-                padding: 6px;
-                min-height: 38px;
-                max-height: 38px;
-                overflow-x: auto;
-                background: linear-gradient(180deg, #f8f8f8, #efefef);
-                border-bottom: 1px solid rgba(0,0,0,0.06);
-            }
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px;
+    min-height: 38px;
+    max-height: 38px;
+    overflow-x: auto;      /* allows scrolling */
+    white-space: nowrap;   /* prevents wrapping */
+    background: linear-gradient(180deg, #f8f8f8, #efefef);
+    border-bottom: 1px solid rgba(0,0,0,0.06);
+}
+#${id} .tm-tabrow::-webkit-scrollbar {
+    height: 8px;           /* optional scrollbar height */
+}
+
             #${id} .tm-tabrow::-webkit-scrollbar { height: 8px; }
             #${id} .tm-tabrow .tm-tab-btn {
                 padding: 6px 10px;
