@@ -246,6 +246,57 @@
 
         return api;
     }
+function lerpColor(color1, color2, t) {
+    // color1 and color2 are [r,g,b]
+    return color1.map((c, i) => Math.round(c + (color2[i] - c) * t));
+}
+
+function rgbToCss(rgb) {
+    return `rgb(${rgb[0]},${rgb[1]},${rgb[2]})`;
+}
+
+function getBackgroundBrightness() {
+    const bg = getComputedStyle(document.body).backgroundColor;
+    const match = bg.match(/\d+/g);
+    if (!match) return 255;
+    const [r,g,b] = match.map(Number);
+    // Standard perceived brightness
+    return (0.299*r + 0.587*g + 0.114*b);
+}
+function applySmoothTheme() {
+    const brightness = getBackgroundBrightness() / 255; // 0=dark, 1=bright
+    const t = 1 - brightness; // how dark we should be (0=light, 1=dark)
+
+    // Define light & dark colors
+    const textLight = [0,0,0], textDark = [255,255,255];
+    const borderLight = [68,68,68], borderDark = [204,204,204];
+    const buttonLight = [246,246,246], buttonDark = [51,51,51];
+    const panelLight = [255,255,255], panelDark = [0,0,0];
+    const lineLight = [0,0,0], lineDark = [204,204,204];
+
+    // Interpolate
+    const textColor = rgbToCss(lerpColor(textLight, textDark, t));
+    const borderColor = rgbToCss(lerpColor(borderLight, borderDark, t));
+    const buttonBg = rgbToCss(lerpColor(buttonLight, buttonDark, t));
+    const panelBg = `rgba(${lerpColor(panelLight, panelDark, t).join(",")},0.9)`;
+    const lineColor = rgbToCss(lerpColor(lineLight, lineDark, t));
+
+    // Apply
+    [leftContainer, rightContainer].forEach(panel => {
+        panel.style.color = textColor;
+        panel.style.borderColor = borderColor;
+        panel.style.backgroundColor = panelBg;
+    });
+    document.querySelectorAll(".tm-btn").forEach(btn => {
+        btn.style.color = textColor;
+        btn.style.borderColor = borderColor;
+        btn.style.backgroundColor = buttonBg;
+    });
+    document.querySelectorAll(".tm-separator").forEach(line => {
+        line.style.background = lineColor;
+    });
+}
+setInterval(() => applySmoothTheme([tmPanel.container]), 0);
 
     const tmPanel = createTMPanel();
     window.tmPanel = tmPanel;
