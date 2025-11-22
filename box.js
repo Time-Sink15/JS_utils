@@ -497,6 +497,81 @@ window.addEventListener("keydown", function (e) {
   // wire api functions that were shadowed by inner helpers
   // (rename inner helpers to avoid conflicts)
   // To avoid naming collision we assign wrapper functions:
+  
+api.addSlider = function (min = 0, max = 100, onChange = null, width = '160px', options = {}) {
+    ensureUI();
+    if (!currentRow) api.addRow();
+
+    const { initial = null, step = 1 } = options;
+
+    // wrapper keeps slider + value together
+    const wrapper = document.createElement('div');
+    wrapper.style.display = 'inline-flex';
+    wrapper.style.alignItems = 'center';
+    wrapper.style.gap = '8px';
+    wrapper.style.flex = '0 0 auto';
+    // allow width as number (px) or string (e.g. '50%')
+    wrapper.style.width = (typeof width === 'number') ? (width + 'px') : width;
+
+    // slider element
+    const input = document.createElement('input');
+    input.type = 'range';
+    input.min = String(min);
+    input.max = String(max);
+    input.step = String(step);
+    input.style.flex = '1 1 auto';
+    input.style.margin = '0';
+    input.style.height = '28px';
+    input.style.cursor = 'pointer';
+    input.style.appearance = 'none'; // neutral look; browsers will still render track/thumb
+    input.style.background = 'transparent';
+
+    // initial value
+    const initVal = (initial !== null) ? Number(initial) : Math.round((Number(min) + Number(max)) / 2);
+    input.value = String(Math.min(Math.max(initVal, Number(min)), Number(max)));
+
+    // numeric value display
+    const valueDisplay = document.createElement('span');
+    valueDisplay.className = 'tm-box-label';
+    valueDisplay.style.whiteSpace = 'nowrap';
+    valueDisplay.textContent = input.value;
+
+    // call handler safely
+    function callHandler(v) {
+        try {
+            onChange && onChange(Number(v));
+        } catch (err) {
+            console.error('slider onChange error', err);
+        }
+    }
+
+    // update on input (continuous) and change (final)
+    input.addEventListener('input', () => {
+        valueDisplay.textContent = input.value;
+        callHandler(input.value);
+    });
+    input.addEventListener('change', () => {
+        valueDisplay.textContent = input.value;
+        callHandler(input.value);
+    });
+
+    // assemble
+    wrapper.appendChild(input);
+    wrapper.appendChild(valueDisplay);
+    currentRow.appendChild(wrapper);
+
+    return {
+        wrapper,
+        input,
+        valueDisplay,
+        getValue: () => Number(input.value),
+        setValue: (v) => {
+            input.value = String(v);
+            valueDisplay.textContent = input.value;
+            callHandler(input.value);
+        }
+    };
+};
   api.addToggleButton = function (
     text = "Toggle",
     functionOn = null,
