@@ -468,55 +468,75 @@
   // wire api functions that were shadowed by inner helpers
   // (rename inner helpers to avoid conflicts)
   // To avoid naming collision we assign wrapper functions:
-  api.addButton = function (text, fn) {
+api.addLabel = function (textOrFn, color = null) {
     ensureUI();
-    if (!currentRow) createRow();
+    if (!currentRow) api.addRow();
+
+    const span = document.createElement('span');
+    span.className = 'tm-box-label';
+
+    if (color) span.style.color = color;
+
+    if (typeof textOrFn === 'function') {
+        try { span.textContent = String(textOrFn()); }
+        catch { span.textContent = 'Err'; }
+        dynamicLabels.push({ el: span, fn: textOrFn });
+    } else {
+        span.textContent = textOrFn;
+    }
+
+    currentRow.appendChild(span);
+    return span;
+};
+api.addButton = function (text, fn, textColor = null, bgColor = null, borderColor = null) {
+    ensureUI();
+    if (!currentRow) api.addRow();
+
     const btn = document.createElement('button');
     btn.className = 'tm-box-button';
     btn.textContent = text;
+
+    if (textColor) btn.style.color = textColor;
+    if (bgColor) btn.style.background = bgColor;
+    if (borderColor) btn.style.borderColor = borderColor;
+
     btn.addEventListener('click', (e) => {
-      try { fn && fn.call(null, e); } catch (err) { console.error(err); }
+        try { fn && fn(e); } catch (err) { console.error(err); }
     });
+
     currentRow.appendChild(btn);
     return btn;
-  };
-
-  api.addLabel = function (textOrFn) {
+};
+api.addLineSeperator = function (color = null) {
     ensureUI();
-    if (!currentRow) createRow();
-    const span = document.createElement('span');
-    span.className = 'tm-box-label';
-    if (typeof textOrFn === 'function') {
-      try { span.textContent = String(textOrFn()); } catch (err) { span.textContent = 'Err'; }
-      dynamicLabels.push({ el: span, fn: textOrFn });
-    } else {
-      span.textContent = String(textOrFn);
-    }
-    currentRow.appendChild(span);
-    return span;
-  };
+    currentRow = null;
 
-  api.addLineSeperator = function () {
-    ensureUI();
     const hr = document.createElement('div');
     hr.className = 'tm-box-sep';
-    currentRow = null;
+
+    if (color)
+        hr.style.borderTop = `1px solid ${color}`;
+
     if (!currentTab) createTab('Default');
+
     currentTab.contentEl.appendChild(hr);
     return hr;
-  };
+};
 
-  // ensure createRoot exists and proper bindings for newTab/addRow
-  api.newTab = function (name = 'Tab') {
+api.addRow = function (bg = null) {
     ensureUI();
-    const t = createTab(String(name));
-    return t.id;
-  };
+    if (!currentTab) createTab('Default');
 
-  api.addRow = function () {
-    ensureUI();
-    return createRow();
-  };
+    const row = document.createElement('div');
+    row.className = 'tm-box-row';
+
+    if (bg) row.style.background = bg;
+
+    currentTab.contentEl.appendChild(row);
+    currentTab.rows.push(row);
+    currentRow = row;
+    return row;
+};
 
   // initialize immediately so it's available right away
   createRoot();
