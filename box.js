@@ -492,9 +492,6 @@ window.addEventListener("keydown", function (e) {
       const t = createTab(String(name));
       return t.id;
     },
-// ensure there's a radioGroups map available
-if (!api._internals) api._internals = {};
-if (!api._internals.radioGroups) api._internals.radioGroups = {};
 
 /**
  * box.addRadioButton(groupId, onSelectFn, text = null, options = {})
