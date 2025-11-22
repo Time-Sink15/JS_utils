@@ -501,6 +501,8 @@ window.addEventListener("keydown", function (e) {
     text = "Toggle",
     functionOn = null,
     functionOff = null,
+    runOnEachFrameWhenOn = false,
+    runOnEachFrameWhenOff = false,
     options = {}
 ) {
     ensureUI();
@@ -515,38 +517,75 @@ window.addEventListener("keydown", function (e) {
         borderColorOff = "#444"
     } = options;
 
-    let state = false; // OFF by default
+    let state = false; // OFF
+    let frameLoopId = null;
 
     const btn = document.createElement("button");
     btn.className = "tm-box-button";
     btn.textContent = text;
 
-    // initial colors (OFF state)
+    // initial appearance (OFF)
     btn.style.color = textColorOff;
     btn.style.background = bgColorOff;
     btn.style.borderColor = borderColorOff;
 
-    btn.addEventListener("click", () => {
-        state = !state;
+    function stopFrameLoop() {
+        if (frameLoopId !== null) {
+            cancelAnimationFrame(frameLoopId);
+            frameLoopId = null;
+        }
+    }
 
+    function startFrameLoop(fn) {
+        function loop() {
+            try { fn(); } catch (err) { console.error(err); }
+            frameLoopId = requestAnimationFrame(loop);
+        }
+        frameLoopId = requestAnimationFrame(loop);
+    }
+
+    function applyStateAppearance() {
         if (state) {
-            // switched ON
             btn.style.color = textColorOn;
             btn.style.background = bgColorOn;
             btn.style.borderColor = borderColorOn;
-            try { functionOn && functionOn(); } catch (e) { console.error(e); }
         } else {
-            // switched OFF
             btn.style.color = textColorOff;
             btn.style.background = bgColorOff;
             btn.style.borderColor = borderColorOff;
-            try { functionOff && functionOff(); } catch (e) { console.error(e); }
+        }
+    }
+
+    btn.addEventListener("click", () => {
+        state = !state;
+        applyStateAppearance();
+
+        // Stop any previous loops
+        stopFrameLoop();
+
+        if (state) {
+            // ON
+            try { functionOn && functionOn(); } catch (err) { console.error(err); }
+
+            // Start per-frame ON loop if enabled
+            if (runOnEachFrameWhenOn && functionOn) {
+                startFrameLoop(functionOn);
+            }
+        } else {
+            // OFF
+            try { functionOff && functionOff(); } catch (err) { console.error(err); }
+
+            // Start per-frame OFF loop if enabled
+            if (runOnEachFrameWhenOff && functionOff) {
+                startFrameLoop(functionOff);
+            }
         }
     });
 
     currentRow.appendChild(btn);
     return btn;
 };
+
 api.addLabel = function (textOrFn, color = null) {
     ensureUI();
     if (!currentRow) api.addRow();
