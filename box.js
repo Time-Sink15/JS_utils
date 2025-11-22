@@ -127,6 +127,56 @@
     s.textContent = css;
     document.head.appendChild(s);
   }
+api.addToggleButton = function (
+    text = "Toggle",
+    functionOn = null,
+    functionOff = null,
+    options = {}
+) {
+    ensureUI();
+    if (!currentRow) api.addRow();
+
+    const {
+        textColorOn = "white",
+        textColorOff = "white",
+        bgColorOn = "#3a7",
+        bgColorOff = "#444",
+        borderColorOn = "#3a7",
+        borderColorOff = "#444"
+    } = options;
+
+    let state = false; // OFF by default
+
+    const btn = document.createElement("button");
+    btn.className = "tm-box-button";
+    btn.textContent = text;
+
+    // initial colors (OFF state)
+    btn.style.color = textColorOff;
+    btn.style.background = bgColorOff;
+    btn.style.borderColor = borderColorOff;
+
+    btn.addEventListener("click", () => {
+        state = !state;
+
+        if (state) {
+            // switched ON
+            btn.style.color = textColorOn;
+            btn.style.background = bgColorOn;
+            btn.style.borderColor = borderColorOn;
+            try { functionOn && functionOn(); } catch (e) { console.error(e); }
+        } else {
+            // switched OFF
+            btn.style.color = textColorOff;
+            btn.style.background = bgColorOff;
+            btn.style.borderColor = borderColorOff;
+            try { functionOff && functionOff(); } catch (e) { console.error(e); }
+        }
+    });
+
+    currentRow.appendChild(btn);
+    return btn;
+};
 
   // Create DOM structure
   let root, header, tabsBar, contentArea, titleEl, toggleBtn;
