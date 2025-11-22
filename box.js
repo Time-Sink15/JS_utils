@@ -56,7 +56,7 @@
 }
 
 .tm-box-tabs-bar {
-  display: block;
+  display: none;
   overflow-x: auto;
   white-space: nowrap;
   -webkit-overflow-scrolling: touch;
