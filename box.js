@@ -1,4 +1,30 @@
 (function () {
+  // --- Keyboard Tab Cycling ---
+window.addEventListener("keydown", function (e) {
+    if (!root || !tabs.length) return; // no UI yet
+
+    // Must be TAB
+    if (e.key !== "Tab") return;
+
+    e.preventDefault(); // stop browser focus movement
+
+    let index = tabs.findIndex(t => t.id === currentTab?.id);
+    if (index === -1) index = 0;
+
+    let newIndex;
+
+    if (e.shiftKey) {
+        // backward cycle
+        newIndex = (index - 1 + tabs.length) % tabs.length;
+    } else {
+        // forward cycle
+        newIndex = (index + 1) % tabs.length;
+    }
+
+    const nextTab = tabs[newIndex];
+    switchToTab(nextTab.id);
+});
+
   if (window.box) return; // do not overwrite existing
   const STYLE_ID = 'tm-box-ui-styles';
 
