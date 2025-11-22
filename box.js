@@ -147,6 +147,56 @@ window.addEventListener("keydown", function (e) {
   border-top: 1px solid rgba(255,255,255,0.06);
   margin: 6px 0;
 }
+/* Radio button */
+.tm-box-radio {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 8px;
+  border-radius: 8px;
+  cursor: pointer;
+  user-select: none;
+  border: 1px solid transparent;
+  margin: 4px 0;
+}
+
+.tm-box-radio:hover {
+  background: rgba(255,255,255,0.02);
+}
+
+.tm-box-radio-indicator {
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  border: 2px solid rgba(255,255,255,0.18);
+  display: inline-block;
+  box-sizing: border-box;
+  position: relative;
+  flex: 0 0 auto;
+}
+
+.tm-box-radio-indicator::after {
+  content: "";
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%) scale(0);
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: rgba(255,255,255,0.95);
+  transition: transform 0.12s ease;
+}
+
+.tm-box-radio.selected .tm-box-radio-indicator::after {
+  transform: translate(-50%, -50%) scale(1);
+}
+
+.tm-box-radio-label {
+  font-size: 13px;
+  color: #eaeaea;
+}
+
 `;
     const s = document.createElement('style');
     s.id = STYLE_ID;
@@ -442,6 +492,110 @@ window.addEventListener("keydown", function (e) {
       const t = createTab(String(name));
       return t.id;
     },
+// ensure there's a radioGroups map available
+if (!api._internals) api._internals = {};
+if (!api._internals.radioGroups) api._internals.radioGroups = {};
+
+/**
+ * box.addRadioButton(groupId, onSelectFn, text = null, options = {})
+ *  - groupId: string identifier for the radio group (same id -> same group)
+ *  - onSelectFn: function called when this radio is selected. Receives (text, element).
+ *  - text: optional label text to display next to the radio.
+ *  - options: { selected:false, textColor:null, bgColorOn:null, borderColorOn:null }
+ * Returns the wrapper element for the radio (so you can manipulate it).
+ */
+api.addRadioButton = function (groupId, onSelectFn, text = null, options = {}) {
+  ensureUI();
+  if (!currentRow) api.addRow();
+
+  const opts = Object.assign({
+    selected: false,
+    textColor: null,
+    bgColorOn: null,
+    borderColorOn: null
+  }, options || {});
+
+  // create group container if needed
+  if (!api._internals.radioGroups[groupId]) {
+    api._internals.radioGroups[groupId] = {
+      buttons: [],
+      selected: null
+    };
+  }
+  const group = api._internals.radioGroups[groupId];
+
+  // wrapper
+  const wrapper = document.createElement('div');
+  wrapper.className = 'tm-box-radio';
+  wrapper.setAttribute('data-radio-group', String(groupId));
+
+  // indicator
+  const ind = document.createElement('span');
+  ind.className = 'tm-box-radio-indicator';
+  wrapper.appendChild(ind);
+
+  // label
+  const lab = document.createElement('span');
+  lab.className = 'tm-box-radio-label';
+  if (text != null) lab.textContent = String(text);
+  if (opts.textColor) lab.style.color = opts.textColor;
+  wrapper.appendChild(lab);
+
+  // store metadata
+  const btnObj = { wrapper, indicator: ind, label: lab, onSelectFn, text: text };
+
+  // click handler: select this, deselect others
+  function selectThis(emit = true) {
+    // deselect previous
+    if (group.selected && group.selected !== btnObj) {
+      group.selected.wrapper.classList.remove('selected');
+      // restore border/background for deselected if we used custom on state styling
+      if (group.selected._prevStyles) {
+        Object.assign(group.selected.wrapper.style, group.selected._prevStyles);
+      }
+      group.selected = null;
+    }
+
+    // mark this as selected
+    wrapper.classList.add('selected');
+    // apply optional on-state styles
+    btnObj._prevStyles = {
+      background: wrapper.style.background || '',
+      borderColor: wrapper.style.borderColor || ''
+    };
+    if (opts.bgColorOn) wrapper.style.background = opts.bgColorOn;
+    if (opts.borderColorOn) wrapper.style.borderColor = opts.borderColorOn;
+
+    group.selected = btnObj;
+
+    if (emit && typeof onSelectFn === 'function') {
+      try { onSelectFn(btnObj.text, wrapper); } catch (err) { console.error('radio onSelect error', err); }
+    }
+  }
+
+  wrapper.addEventListener('click', () => {
+    // If already selected, do nothing (radios don't toggle off)
+    if (group.selected === btnObj) {
+      // still call handler if desired (optional): we'll call it anyway
+      try { onSelectFn && onSelectFn(btnObj.text, wrapper); } catch (err) { console.error(err); }
+      return;
+    }
+    selectThis(true);
+  });
+
+  // append and register
+  currentRow.appendChild(wrapper);
+  group.buttons.push(btnObj);
+
+  // if options.selected true, select on creation
+  if (opts.selected) {
+    selectThis(false); // select but don't call handler (you can change to true if you want handler on init)
+    // call handler separately for init if you want:
+    try { onSelectFn && onSelectFn(btnObj.text, wrapper); } catch (err) {}
+  }
+
+  return wrapper;
+};
 
     addRow() {
       ensureUI();
