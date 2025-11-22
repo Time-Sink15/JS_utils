@@ -271,6 +271,7 @@
 
     root = document.createElement('div');
     root.id = 'tm-box-ui-root';
+    root.style.zIndex = '2147483647';
     root.style.left = '20px';
     root.style.top = '20px';
     root.style.width = '380px';
@@ -576,81 +577,87 @@
     _internals: {
       radioGroups: {}
     },
+addRadioButton(groupId, onSelectFn, text = null, options = {}) {
+  ensureUI();
+  if (!currentRow) createRow();
 
-    addRadioButton(groupId, onSelectFn, text = null, options = {}) {
-      ensureUI();
-      if (!currentRow) createRow();
+  const opts = Object.assign({
+    selected: false,
+    textColor: null,
+    bgColorOn: null,
+    borderColorOn: null
+  }, options || {});
 
-      const opts = Object.assign({
-        selected: false,
-        textColor: null,
-        bgColorOn: null,
-        borderColorOn: null
-      }, options || {});
+  const key = String(groupId); // normalize key
 
-      if (!api._internals.radioGroups[groupId]) {
-        api._internals.radioGroups[groupId] = { buttons: [], selected: null };
+  if (!api._internals.radioGroups[key]) {
+    api._internals.radioGroups[key] = { buttons: [], selected: null };
+  }
+  const group = api._internals.radioGroups[key];
+
+  const wrapper = document.createElement('div');
+  wrapper.className = 'tm-box-radio';
+  wrapper.setAttribute('data-radio-group', key);
+
+  const ind = document.createElement('span');
+  ind.className = 'tm-box-radio-indicator';
+  wrapper.appendChild(ind);
+
+  const lab = document.createElement('span');
+  lab.className = 'tm-box-radio-label';
+  if (text != null) lab.textContent = String(text);
+  if (opts.textColor) lab.style.color = opts.textColor;
+  wrapper.appendChild(lab);
+
+  // store metadata and the callback on the object
+  const btnObj = { wrapper, indicator: ind, label: lab, onSelectFn: onSelectFn, text: text };
+
+  function selectThis(emit = true) {
+    // deselect previous
+    if (group.selected && group.selected !== btnObj) {
+      group.selected.wrapper.classList.remove('selected');
+      if (group.selected._prevStyles) {
+        Object.assign(group.selected.wrapper.style, group.selected._prevStyles);
       }
-      const group = api._internals.radioGroups[groupId];
+      group.selected = null;
+    }
 
-      const wrapper = document.createElement('div');
-      wrapper.className = 'tm-box-radio';
-      wrapper.setAttribute('data-radio-group', String(groupId));
+    // select current
+    wrapper.classList.add('selected');
+    btnObj._prevStyles = {
+      background: wrapper.style.background || '',
+      borderColor: wrapper.style.borderColor || ''
+    };
+    if (opts.bgColorOn) wrapper.style.background = opts.bgColorOn;
+    if (opts.borderColorOn) wrapper.style.borderColor = opts.borderColorOn;
 
-      const ind = document.createElement('span');
-      ind.className = 'tm-box-radio-indicator';
-      wrapper.appendChild(ind);
+    group.selected = btnObj;
 
-      const lab = document.createElement('span');
-      lab.className = 'tm-box-radio-label';
-      if (text != null) lab.textContent = String(text);
-      if (opts.textColor) lab.style.color = opts.textColor;
-      wrapper.appendChild(lab);
+    if (emit && typeof btnObj.onSelectFn === 'function') {
+      try { btnObj.onSelectFn(btnObj.text, wrapper); } catch (err) { console.error('radio onSelect error', err); }
+    }
+  }
 
-      const btnObj = { wrapper, indicator: ind, label: lab, onSelectFn, text: text };
+  wrapper.addEventListener('click', () => {
+    if (group.selected === btnObj) {
+      // call this button's handler even if already selected
+      try { btnObj.onSelectFn && btnObj.onSelectFn(btnObj.text, wrapper); } catch (err) { console.error(err); }
+      return;
+    }
+    selectThis(true);
+  });
 
-      function selectThis(emit = true) {
-        if (group.selected && group.selected !== btnObj) {
-          group.selected.wrapper.classList.remove('selected');
-          if (group.selected._prevStyles) {
-            Object.assign(group.selected.wrapper.style, group.selected._prevStyles);
-          }
-          group.selected = null;
-        }
+  currentRow.appendChild(wrapper);
+  group.buttons.push(btnObj);
 
-        wrapper.classList.add('selected');
-        btnObj._prevStyles = {
-          background: wrapper.style.background || '',
-          borderColor: wrapper.style.borderColor || ''
-        };
-        if (opts.bgColorOn) wrapper.style.background = opts.bgColorOn;
-        if (opts.borderColorOn) wrapper.style.borderColor = opts.borderColorOn;
+  if (opts.selected) {
+    selectThis(false);
+    try { btnObj.onSelectFn && btnObj.onSelectFn(btnObj.text, wrapper); } catch (err) {}
+  }
 
-        group.selected = btnObj;
+  return wrapper;
+}
 
-        if (emit && typeof onSelectFn === 'function') {
-          try { onSelectFn(btnObj.text, wrapper); } catch (err) { console.error('radio onSelect error', err); }
-        }
-      }
-
-      wrapper.addEventListener('click', () => {
-        if (group.selected === btnObj) {
-          try { onSelectFn && onSelectFn(btnObj.text, wrapper); } catch (err) {}
-          return;
-        }
-        selectThis(true);
-      });
-
-      currentRow.appendChild(wrapper);
-      group.buttons.push(btnObj);
-
-      if (opts.selected) {
-        selectThis(false);
-        try { onSelectFn && onSelectFn(btnObj.text, wrapper); } catch (err) {}
-      }
-
-      return wrapper;
-    },
 
     switchTo(tabId) {
       if (!tabId) return;
