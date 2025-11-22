@@ -585,6 +585,35 @@ window.addEventListener("keydown", function (e) {
     currentRow.appendChild(btn);
     return btn;
 };
+api.addHSpace = function (width = 8) {
+    ensureUI();
+    if (!currentRow) api.addRow();
+
+    const spacer = document.createElement("div");
+    spacer.style.display = "inline-block";
+    spacer.style.width = width + "px";
+    spacer.style.height = "1px";
+    spacer.style.flex = "0 0 auto";
+
+    currentRow.appendChild(spacer);
+    return spacer;
+};
+
+api.addHLine = function (height = 16, color = "#666") {
+    ensureUI();
+    if (!currentRow) api.addRow();
+
+    const line = document.createElement("div");
+    line.style.display = "inline-block";
+    line.style.width = "1px";
+    line.style.height = height + "px";
+    line.style.background = color;
+    line.style.margin = "0 6px";
+    line.style.flex = "0 0 auto";
+
+    currentRow.appendChild(line);
+    return line;
+};
 
 api.addLabel = function (textOrFn, color = null) {
     ensureUI();
