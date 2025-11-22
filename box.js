@@ -56,13 +56,16 @@
 }
 
 .tm-box-tabs-bar {
-  display: none;
+  display: block;
+  scrollbar-width: none;
   overflow-x: auto;
   white-space: nowrap;
   -webkit-overflow-scrolling: touch;
   border-bottom: 1px solid rgba(255,255,255,0.06);
 }
-
+.tm-box-tabs-bar::-webkit-scrollbar {
+  display: none;
+}
 .tm-box-tab {
   display: inline-block;
   padding: 8px 12px;
