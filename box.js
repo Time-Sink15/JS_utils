@@ -504,7 +504,7 @@ if (!api._internals.radioGroups) api._internals.radioGroups = {};
  *  - options: { selected:false, textColor:null, bgColorOn:null, borderColorOn:null }
  * Returns the wrapper element for the radio (so you can manipulate it).
  */
-api.addRadioButton = function (groupId, onSelectFn, text = null, options = {}) {
+addRadioButton = function (groupId, onSelectFn, text = null, options = {}) {
   ensureUI();
   if (!currentRow) api.addRow();
 
