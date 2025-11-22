@@ -497,65 +497,119 @@ window.addEventListener("keydown", function (e) {
   // wire api functions that were shadowed by inner helpers
   // (rename inner helpers to avoid conflicts)
   // To avoid naming collision we assign wrapper functions:
-  
-api.addSlider = function (min = 0, max = 100, onChange = null, width = '160px', options = {}) {
+  api.addSlider = function (
+    min = 0,
+    max = 100,
+    onChange = null,
+    width = "160px",
+    options = {}
+) {
     ensureUI();
     if (!currentRow) api.addRow();
 
-    const { initial = null, step = 1 } = options;
+    const {
+        initial = null,
+        step = 1,
+        trackColor = "#888",    // NEW: track color
+        thumbColor = "#ccc"     // optional: thumb color
+    } = options;
 
-    // wrapper keeps slider + value together
-    const wrapper = document.createElement('div');
-    wrapper.style.display = 'inline-flex';
-    wrapper.style.alignItems = 'center';
-    wrapper.style.gap = '8px';
-    wrapper.style.flex = '0 0 auto';
-    // allow width as number (px) or string (e.g. '50%')
-    wrapper.style.width = (typeof width === 'number') ? (width + 'px') : width;
+    // Create wrapper
+    const wrapper = document.createElement("div");
+    wrapper.style.display = "inline-flex";
+    wrapper.style.alignItems = "center";
+    wrapper.style.gap = "8px";
+    wrapper.style.flex = "0 0 auto";
+    wrapper.style.width = (typeof width === "number") ? width + "px" : width;
 
-    // slider element
-    const input = document.createElement('input');
-    input.type = 'range';
+    // Slider input
+    const input = document.createElement("input");
+    input.type = "range";
     input.min = String(min);
     input.max = String(max);
     input.step = String(step);
-    input.style.flex = '1 1 auto';
-    input.style.margin = '0';
-    input.style.height = '28px';
-    input.style.cursor = 'pointer';
-    input.style.appearance = 'none'; // neutral look; browsers will still render track/thumb
-    input.style.background = 'transparent';
+    input.style.flex = "1 1 auto";
+    input.style.margin = "0";
+    input.style.cursor = "pointer";
 
-    // initial value
-    const initVal = (initial !== null) ? Number(initial) : Math.round((Number(min) + Number(max)) / 2);
-    input.value = String(Math.min(Math.max(initVal, Number(min)), Number(max)));
+    // Apply initial value
+    const initVal = (initial !== null)
+        ? Number(initial)
+        : Math.round((Number(min) + Number(max)) / 2);
 
-    // numeric value display
-    const valueDisplay = document.createElement('span');
-    valueDisplay.className = 'tm-box-label';
-    valueDisplay.style.whiteSpace = 'nowrap';
+    input.value = String(
+        Math.min(Math.max(initVal, Number(min)), Number(max))
+    );
+
+    // Numeric value label
+    const valueDisplay = document.createElement("span");
+    valueDisplay.className = "tm-box-label";
+    valueDisplay.style.whiteSpace = "nowrap";
     valueDisplay.textContent = input.value;
 
-    // call handler safely
-    function callHandler(v) {
-        try {
-            onChange && onChange(Number(v));
-        } catch (err) {
-            console.error('slider onChange error', err);
+    // --- Inject slider CSS once ---
+    if (!window.__tm_slider_css_injected) {
+        window.__tm_slider_css_injected = true;
+
+        const style = document.createElement("style");
+        style.textContent = `
+        .tm-slider {
+            -webkit-appearance: none;
+            appearance: none;
+            height: 6px;
+            border-radius: 4px;
+            outline: none;
         }
+        /* Track */
+        .tm-slider::-webkit-slider-runnable-track {
+            height: 6px;
+            border-radius: 4px;
+        }
+        .tm-slider::-moz-range-track {
+            height: 6px;
+            border-radius: 4px;
+        }
+
+        /* Thumb */
+        .tm-slider::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 16px;
+            height: 16px;
+            border-radius: 50%;
+            cursor: pointer;
+        }
+        .tm-slider::-moz-range-thumb {
+            width: 16px;
+            height: 16px;
+            border-radius: 50%;
+            cursor: pointer;
+        }
+        `;
+        document.head.appendChild(style);
     }
 
-    // update on input (continuous) and change (final)
-    input.addEventListener('input', () => {
+    // Add class so CSS applies
+    input.classList.add("tm-slider");
+
+    // Apply track + thumb colors using inline CSS variables
+    input.style.setProperty("--trackColor", trackColor);
+    input.style.setProperty("--thumbColor", thumbColor);
+
+    // Override browser styling using CSS vars
+    input.style.background = trackColor;
+
+    input.addEventListener("input", () => {
         valueDisplay.textContent = input.value;
-        callHandler(input.value);
-    });
-    input.addEventListener('change', () => {
-        valueDisplay.textContent = input.value;
-        callHandler(input.value);
+        onChange && onChange(Number(input.value));
     });
 
-    // assemble
+    input.addEventListener("change", () => {
+        valueDisplay.textContent = input.value;
+        onChange && onChange(Number(input.value));
+    });
+
+    // Put slider + value into row
     wrapper.appendChild(input);
     wrapper.appendChild(valueDisplay);
     currentRow.appendChild(wrapper);
@@ -564,14 +618,18 @@ api.addSlider = function (min = 0, max = 100, onChange = null, width = '160px', 
         wrapper,
         input,
         valueDisplay,
-        getValue: () => Number(input.value),
+        setTrackColor: (c) => {
+            input.style.background = c;
+        },
         setValue: (v) => {
             input.value = String(v);
             valueDisplay.textContent = input.value;
-            callHandler(input.value);
-        }
+            onChange && onChange(Number(v));
+        },
+        getValue: () => Number(input.value)
     };
 };
+
   api.addToggleButton = function (
     text = "Toggle",
     functionOn = null,
