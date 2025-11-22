@@ -8,7 +8,7 @@
 .tm-box-ui {
   position: fixed;
   z-index: 999999;
-  background: rgba(30,30,30,0.90);
+  background: rgba(30,30,30,0.95);
   color: #f5f5f5;
   font-family: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial;
   border-radius: 8px;
