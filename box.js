@@ -497,7 +497,7 @@ window.addEventListener("keydown", function (e) {
   // wire api functions that were shadowed by inner helpers
   // (rename inner helpers to avoid conflicts)
   // To avoid naming collision we assign wrapper functions:
-  api.addSlider = function (
+api.addSlider = function (
     min = 0,
     max = 100,
     onChange = null,
@@ -510,11 +510,11 @@ window.addEventListener("keydown", function (e) {
     const {
         initial = null,
         step = 1,
-        trackColor = "#888",    // NEW: track color
-        thumbColor = "#ccc"     // optional: thumb color
+        trackColor = "#888",
+        thumbColor = "#ccc"
     } = options;
 
-    // Create wrapper
+    // Wrapper
     const wrapper = document.createElement("div");
     wrapper.style.display = "inline-flex";
     wrapper.style.alignItems = "center";
@@ -532,7 +532,7 @@ window.addEventListener("keydown", function (e) {
     input.style.margin = "0";
     input.style.cursor = "pointer";
 
-    // Apply initial value
+    // Initial value
     const initVal = (initial !== null)
         ? Number(initial)
         : Math.round((Number(min) + Number(max)) / 2);
@@ -541,25 +541,28 @@ window.addEventListener("keydown", function (e) {
         Math.min(Math.max(initVal, Number(min)), Number(max))
     );
 
-    // Numeric value label
+    // Value display
     const valueDisplay = document.createElement("span");
     valueDisplay.className = "tm-box-label";
     valueDisplay.style.whiteSpace = "nowrap";
     valueDisplay.textContent = input.value;
 
-    // --- Inject slider CSS once ---
-    if (!window.__tm_slider_css_injected) {
-        window.__tm_slider_css_injected = true;
+    // Inject CSS exactly once
+    if (!window.__tm_slider_css_fixed) {
+        window.__tm_slider_css_fixed = true;
 
         const style = document.createElement("style");
         style.textContent = `
+        /* Base slider */
         .tm-slider {
             -webkit-appearance: none;
             appearance: none;
             height: 6px;
             border-radius: 4px;
             outline: none;
+            background: #777; /* default track */
         }
+
         /* Track */
         .tm-slider::-webkit-slider-runnable-track {
             height: 6px;
@@ -577,28 +580,33 @@ window.addEventListener("keydown", function (e) {
             width: 16px;
             height: 16px;
             border-radius: 50%;
+            background: #ccc;    /* visible default */
+            border: 2px solid #0004;
             cursor: pointer;
+            margin-top: -5px; /* aligns thumb with track */
         }
         .tm-slider::-moz-range-thumb {
             width: 16px;
             height: 16px;
             border-radius: 50%;
+            background: #ccc;    /* visible default */
+            border: 2px solid #0004;
             cursor: pointer;
         }
         `;
         document.head.appendChild(style);
     }
 
-    // Add class so CSS applies
+    // Apply class
     input.classList.add("tm-slider");
 
-    // Apply track + thumb colors using inline CSS variables
-    input.style.setProperty("--trackColor", trackColor);
-    input.style.setProperty("--thumbColor", thumbColor);
-
-    // Override browser styling using CSS vars
+    // Custom styling
     input.style.background = trackColor;
 
+    // Custom thumb color (inline style override)
+    input.style.setProperty("--thumbColor", thumbColor);
+
+    // Force thumb color using inline CSS (Chrome/Safari/WebKit)
     input.addEventListener("input", () => {
         valueDisplay.textContent = input.value;
         onChange && onChange(Number(input.value));
@@ -609,7 +617,7 @@ window.addEventListener("keydown", function (e) {
         onChange && onChange(Number(input.value));
     });
 
-    // Put slider + value into row
+    // Build slider
     wrapper.appendChild(input);
     wrapper.appendChild(valueDisplay);
     currentRow.appendChild(wrapper);
@@ -618,8 +626,10 @@ window.addEventListener("keydown", function (e) {
         wrapper,
         input,
         valueDisplay,
-        setTrackColor: (c) => {
-            input.style.background = c;
+        setTrackColor: (c) => input.style.background = c,
+        setThumbColor: (c) => {
+            input.style.setProperty("--thumbColor", c);
+            input.style.background = input.style.background; // refresh
         },
         setValue: (v) => {
             input.value = String(v);
@@ -629,6 +639,7 @@ window.addEventListener("keydown", function (e) {
         getValue: () => Number(input.value)
     };
 };
+
 
   api.addToggleButton = function (
     text = "Toggle",
