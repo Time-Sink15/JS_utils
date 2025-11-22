@@ -400,14 +400,16 @@
 
   // API
   const api = {
-    initialize(x = 20, y = 20, w = 380, h = 320) {
-      createRoot();
-      root.style.left = (Number.isFinite(x) ? x : 20) + 'px';
-      root.style.top = (Number.isFinite(y) ? y : 20) + 'px';
-      root.style.width = (Number.isFinite(w) ? w : 380) + 'px';
-      root.style.height = (Number.isFinite(h) ? h : 320) + 'px';
-      return api;
-    },
+   initialize(x = 20, y = 20, w = 380, h = 320) {
+    if (!root) createRoot();  // Only create once, and only when initialize is called
+
+    root.style.left = (Number.isFinite(x) ? x : 20) + 'px';
+    root.style.top = (Number.isFinite(y) ? y : 20) + 'px';
+    root.style.width = (Number.isFinite(w) ? w : 380) + 'px';
+    root.style.height = (Number.isFinite(h) ? h : 320) + 'px';
+    return api;
+},
+
 
     newTab(name = 'Tab') {
       ensureUI();
@@ -589,8 +591,6 @@ api.addRow = function (bg = null) {
     return row;
 };
 
-  // initialize immediately so it's available right away
-  createRoot();
 
   // expose
   window.box = api;
