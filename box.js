@@ -639,7 +639,177 @@ api.addSlider = function (
         getValue: () => Number(input.value)
     };
 };
+api.addSegmentedButton = function (labels = [], callbacks = [], options = {}) {
+  ensureUI();
+  if (!currentRow) api.addRow();
 
+  // Normalize inputs
+  if (!Array.isArray(labels)) labels = [String(labels)];
+  if (!Array.isArray(callbacks)) callbacks = [callbacks || (() => {})];
+
+  const {
+    height = 32,
+    width = 'auto',
+    borderRadius = 6,
+    bgColor = '#2f2f2f',
+    textColor = '#eee',
+    activeBg = '#4caf50',
+    activeText = '#000',
+    borderColor = 'rgba(255,255,255,0.06)',
+    spacing = 0,
+    singleSelect = true,
+    initialIndex = -1
+  } = options || {};
+
+  const container = document.createElement('div');
+  container.style.display = 'inline-flex';
+  container.style.alignItems = 'center';
+  container.style.justifyContent = 'flex-start';
+  container.style.gap = (spacing || 0) + 'px';
+  container.style.flex = '0 0 auto';
+  if (width !== 'auto') container.style.width = (typeof width === 'number' ? width + 'px' : width);
+
+  const btns = [];
+  let activeIndex = -1;
+
+  // Helper to apply style for a segment button
+  function styleButton(btn, idx) {
+    // base inline styles to avoid site CSS interference
+    btn.style.display = 'inline-flex';
+    btn.style.alignItems = 'center';
+    btn.style.justifyContent = 'center';
+    btn.style.height = height + 'px';
+    btn.style.lineHeight = (height - 2) + 'px';
+    btn.style.padding = '0 12px';
+    btn.style.margin = '0';
+    btn.style.border = '1px solid ' + borderColor;
+    btn.style.background = bgColor;
+    btn.style.color = textColor;
+    btn.style.cursor = 'pointer';
+    btn.style.fontSize = '13px';
+    btn.style.userSelect = 'none';
+    btn.style.boxSizing = 'border-box';
+    btn.style.outline = 'none';
+    btn.style.flex = '0 0 auto';
+    // rounded corners on the full control edges only
+    if (idx === 0) {
+      btn.style.borderTopLeftRadius = borderRadius + 'px';
+      btn.style.borderBottomLeftRadius = borderRadius + 'px';
+    } else {
+      btn.style.borderTopLeftRadius = '0px';
+      btn.style.borderBottomLeftRadius = '0px';
+    }
+    if (idx === labels.length - 1) {
+      btn.style.borderTopRightRadius = borderRadius + 'px';
+      btn.style.borderBottomRightRadius = borderRadius + 'px';
+    } else {
+      btn.style.borderTopRightRadius = '0px';
+      btn.style.borderBottomRightRadius = '0px';
+    }
+
+    // collapse adjacent borders so it looks connected
+    if (idx > 0) {
+      // remove left border for internal buttons for seamless look
+      btn.style.borderLeftWidth = '0px';
+    }
+
+    // protect from site CSS by making padding/line-height explicit and important-like via inline
+    btn.style.padding = '0 12px';
+    btn.style.lineHeight = (height - 2) + 'px';
+
+    // small focus style to remain visible but not hijacked by page
+    btn.addEventListener('focus', () => {
+      btn.style.boxShadow = 'inset 0 0 0 2px rgba(255,255,255,0.03)';
+    });
+    btn.addEventListener('blur', () => {
+      btn.style.boxShadow = 'none';
+    });
+  }
+
+  function applyActive(idx) {
+    for (let i = 0; i < btns.length; i++) {
+      const b = btns[i];
+      if (i === idx) {
+        b.style.background = activeBg;
+        b.style.color = activeText;
+      } else {
+        b.style.background = bgColor;
+        b.style.color = textColor;
+      }
+    }
+    activeIndex = idx;
+  }
+
+  // create buttons
+  for (let i = 0; i < labels.length; i++) {
+    const text = String(labels[i] == null ? '' : labels[i]);
+    const cb = (typeof callbacks[i] === 'function') ? callbacks[i] : (() => {});
+    const btn = document.createElement('button');
+
+    // content and basic behavior
+    btn.type = 'button';
+    btn.textContent = text;
+
+    // style it
+    styleButton(btn, i);
+
+    // click handler
+    btn.addEventListener('click', (ev) => {
+      try {
+        cb(ev);
+      } catch (err) {
+        console.error('segmented button callback error', err);
+      }
+      if (singleSelect) {
+        applyActive(i);
+      }
+    });
+
+    // append
+    container.appendChild(btn);
+    btns.push(btn);
+  }
+
+  // set initial active if requested
+  if (Number.isFinite(initialIndex) && initialIndex >= 0 && initialIndex < btns.length) {
+    applyActive(initialIndex);
+  }
+
+  // attach to current row
+  currentRow.appendChild(container);
+
+  // return control object
+  return {
+    container,
+    buttons: btns,
+    getActive: () => activeIndex,
+    setActive: (idx) => {
+      if (idx == null || idx < 0 || idx >= btns.length) {
+        activeIndex = -1;
+        // reset visuals
+        for (const b of btns) {
+          b.style.background = bgColor;
+          b.style.color = textColor;
+        }
+        return;
+      }
+      applyActive(idx);
+    },
+    clearActive: () => {
+      return this.setActive(-1);
+    },
+    setLabel: (idx, newLabel) => {
+      if (idx >= 0 && idx < btns.length) btns[idx].textContent = String(newLabel);
+    },
+    enable: (idx, yes = true) => {
+      if (idx >= 0 && idx < btns.length) {
+        btns[idx].disabled = !yes;
+        btns[idx].style.opacity = yes ? '1' : '0.5';
+        btns[idx].style.cursor = yes ? 'pointer' : 'default';
+      }
+    }
+  };
+};
 
   api.addToggleButton = function (
     text = "Toggle",
