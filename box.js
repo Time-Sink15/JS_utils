@@ -52,7 +52,7 @@ window.addEventListener("keydown", function (e) {
   display: flex;
   align-items: center;
   gap: 8px;
-  padding: 6px 8px;
+  padding: 6px 8px !important;
   background: linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.0));
   cursor: move;
 }
@@ -60,7 +60,7 @@ window.addEventListener("keydown", function (e) {
 .tm-box-title {
   font-weight: 600;
   font-size: 13px;
-  padding-left: 6px;
+  padding-left: 6px !important;
   flex: 0 0 auto;
 }
 
@@ -75,7 +75,7 @@ window.addEventListener("keydown", function (e) {
   background: transparent;
   border: 1px solid rgba(255,255,255,0.06);
   color: inherit;
-  padding: 4px 6px;
+  padding: 4px 6px !important;
   border-radius: 6px;
   cursor: pointer;
   font-size: 12px;
@@ -94,7 +94,7 @@ window.addEventListener("keydown", function (e) {
 }
 .tm-box-tab {
   display: inline-block;
-  padding: 8px 12px;
+  padding: 8px 12px !important;
   margin: 6px 4px;
   border-radius: 6px;
   background: transparent;
@@ -112,7 +112,7 @@ window.addEventListener("keydown", function (e) {
 }
 
 .tm-box-content {
-  padding: 8px;
+  padding: 8px !important;
   overflow: auto;
   flex: 1 1 auto;
   min-height: 50px;
@@ -123,12 +123,12 @@ window.addEventListener("keydown", function (e) {
   display: flex;
   gap: 8px;
   align-items: center;
-  padding: 6px 4px;
+  padding: 6px 4px !important;
   flex-wrap: wrap;
 }
 
 .tm-box-button {
-  padding: 6px 10px;
+  padding: 6px 10px !important;
   border-radius: 6px;
   border: 1px solid rgba(255,255,255,0.06);
   background: rgba(255,255,255,0.02);
@@ -139,7 +139,7 @@ window.addEventListener("keydown", function (e) {
 
 .tm-box-label {
   font-size: 13px;
-  padding: 4px 6px;
+  padding: 4px 6px !important;
   color: #eaeaea;
 }
 
