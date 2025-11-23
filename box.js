@@ -112,8 +112,10 @@ window.addEventListener("keydown", function (e) {
 }
 
 .tm-box-content {
+    overflow-x: auto;        /* allow left-right scrolling */
+    overflow-y: auto;        /* keep normal vertical scroll */
+    white-space: nowrap;     /* prevents content from wrapping */
   padding: 8px !important;
-  overflow: auto;
   flex: 1 1 auto;
   min-height: 50px;
 }
