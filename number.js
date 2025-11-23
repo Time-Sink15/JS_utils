@@ -1,7 +1,7 @@
 
     const suffixes = {
-        K: 1e3,
-        M: 1e6,
+        k: 1e3,
+        m: 1e6,
         B: 1e9,
         T: 1e12,
         Qu: 1e15,
