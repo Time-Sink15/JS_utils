@@ -10,15 +10,18 @@
         Sp: 1e24,
     };
 
-    function expandNumber(str) {
-        if (typeof str !== 'string') return str;
-        const match = str.trim().match(/^([\d,.]+)\s*([kKmMbBtT])$/);
-        if (!match) return str;
-        let [, num, suf] = match;
-        num = parseFloat(num.replace(/,/g, ''));
-        suf = suf.toLowerCase();
-        return String(num * suffixes[suf]);
-    }
+function expandNumber(str) {
+    if (typeof str !== 'string') return str;
+    str = str.trim();
+    const match = str.match(/^([\d,]*\.?\d+)\s*([kKmMbBtT])$/);
+    if (!match) return str;
+    let [, num, suf] = match;
+    num = parseFloat(num.replace(/,/g, ''));
+    suf = suf.toLowerCase();
+    if (isNaN(num) || !suffixes[suf]) return str;
+    return String(num * suffixes[suf]);
+}
+
 
     function shortenNumber(input) {
         let num = Number(String(input).replace(/,/g, ''));
