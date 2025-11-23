@@ -657,7 +657,8 @@ api.addSegmentedButton = function (labels = [], callbacks = [], options = {}) {
     activeText = '#000',
     borderColor = 'rgba(255,255,255,0.06)',
     spacing = 0,
-    singleSelect = true,
+    radio = false,            // NEW: if true -> radio behavior (one green at a time)
+    allowDeselect = false,    // NEW: if true, clicking active radio deselects it
     initialIndex = -1
   } = options || {};
 
@@ -674,7 +675,7 @@ api.addSegmentedButton = function (labels = [], callbacks = [], options = {}) {
 
   // Helper to apply style for a segment button
   function styleButton(btn, idx) {
-    // base inline styles to avoid site CSS interference
+    btn.type = 'button';
     btn.style.display = 'inline-flex';
     btn.style.alignItems = 'center';
     btn.style.justifyContent = 'center';
@@ -691,7 +692,8 @@ api.addSegmentedButton = function (labels = [], callbacks = [], options = {}) {
     btn.style.boxSizing = 'border-box';
     btn.style.outline = 'none';
     btn.style.flex = '0 0 auto';
-    // rounded corners on the full control edges only
+    btn.style.transition = 'box-shadow 120ms ease, background 120ms ease, color 120ms ease';
+    // rounded corners on edges
     if (idx === 0) {
       btn.style.borderTopLeftRadius = borderRadius + 'px';
       btn.style.borderBottomLeftRadius = borderRadius + 'px';
@@ -707,19 +709,26 @@ api.addSegmentedButton = function (labels = [], callbacks = [], options = {}) {
       btn.style.borderBottomRightRadius = '0px';
     }
 
-    // collapse adjacent borders so it looks connected
+    // collapse adjacent borders for seamless look
     if (idx > 0) {
-      // remove left border for internal buttons for seamless look
       btn.style.borderLeftWidth = '0px';
     }
 
-    // protect from site CSS by making padding/line-height explicit and important-like via inline
+    // Protect padding/line-height from site CSS (inline)
     btn.style.padding = '0 12px';
     btn.style.lineHeight = (height - 2) + 'px';
 
-    // small focus style to remain visible but not hijacked by page
+    // Hover: brighten outline (subtle)
+    btn.addEventListener('mouseenter', () => {
+      btn.style.boxShadow = 'inset 0 0 0 2px rgba(255,255,255,0.07)';
+    });
+    btn.addEventListener('mouseleave', () => {
+      btn.style.boxShadow = 'none';
+    });
+
+    // Focus style
     btn.addEventListener('focus', () => {
-      btn.style.boxShadow = 'inset 0 0 0 2px rgba(255,255,255,0.03)';
+      btn.style.boxShadow = 'inset 0 0 0 2px rgba(255,255,255,0.08)';
     });
     btn.addEventListener('blur', () => {
       btn.style.boxShadow = 'none';
@@ -727,6 +736,18 @@ api.addSegmentedButton = function (labels = [], callbacks = [], options = {}) {
   }
 
   function applyActive(idx) {
+    // If radio === false, do not visually highlight anything
+    if (!radio) {
+      activeIndex = -1;
+      for (let i = 0; i < btns.length; i++) {
+        const b = btns[i];
+        b.style.background = bgColor;
+        b.style.color = textColor;
+      }
+      return;
+    }
+
+    // radio === true -> one active at a time
     for (let i = 0; i < btns.length; i++) {
       const b = btns[i];
       if (i === idx) {
@@ -746,33 +767,42 @@ api.addSegmentedButton = function (labels = [], callbacks = [], options = {}) {
     const cb = (typeof callbacks[i] === 'function') ? callbacks[i] : (() => {});
     const btn = document.createElement('button');
 
-    // content and basic behavior
-    btn.type = 'button';
     btn.textContent = text;
 
-    // style it
     styleButton(btn, i);
 
-    // click handler
     btn.addEventListener('click', (ev) => {
-      try {
-        cb(ev);
-      } catch (err) {
-        console.error('segmented button callback error', err);
-      }
-      if (singleSelect) {
-        applyActive(i);
+      try { cb(ev); } catch (err) { console.error('segmented callback error', err); }
+
+      if (radio) {
+        if (activeIndex === i) {
+          // already active
+          if (allowDeselect) {
+            // deselect
+            applyActive(-1);
+          } else {
+            // keep it active (no change)
+            applyActive(activeIndex);
+          }
+        } else {
+          applyActive(i);
+        }
+      } else {
+        // radio === false -> do not visually highlight any segment
+        // (no automatic green). If you want to manually highlight, use setActive.
       }
     });
 
-    // append
     container.appendChild(btn);
     btns.push(btn);
   }
 
-  // set initial active if requested
-  if (Number.isFinite(initialIndex) && initialIndex >= 0 && initialIndex < btns.length) {
+  // set initial active if requested and radio true
+  if (radio && Number.isFinite(initialIndex) && initialIndex >= 0 && initialIndex < btns.length) {
     applyActive(initialIndex);
+  } else if (!radio) {
+    // ensure no highlight
+    applyActive(-1);
   }
 
   // attach to current row
@@ -784,19 +814,42 @@ api.addSegmentedButton = function (labels = [], callbacks = [], options = {}) {
     buttons: btns,
     getActive: () => activeIndex,
     setActive: (idx) => {
-      if (idx == null || idx < 0 || idx >= btns.length) {
-        activeIndex = -1;
-        // reset visuals
-        for (const b of btns) {
-          b.style.background = bgColor;
-          b.style.color = textColor;
+      if (!radio) {
+        // if not radio, calling setActive will still apply visuals if you want it
+        if (idx == null || idx < 0 || idx >= btns.length) {
+          activeIndex = -1;
+          for (const b of btns) {
+            b.style.background = bgColor;
+            b.style.color = textColor;
+          }
+          return;
         }
-        return;
+        // apply visual selection even though radio was false (gives control to caller)
+        activeIndex = idx;
+        for (let i = 0; i < btns.length; i++) {
+          const b = btns[i];
+          if (i === idx) {
+            b.style.background = activeBg;
+            b.style.color = activeText;
+          } else {
+            b.style.background = bgColor;
+            b.style.color = textColor;
+          }
+        }
+      } else {
+        if (idx == null || idx < 0 || idx >= btns.length) {
+          activeIndex = -1;
+          for (const b of btns) {
+            b.style.background = bgColor;
+            b.style.color = textColor;
+          }
+          return;
+        }
+        applyActive(idx);
       }
-      applyActive(idx);
     },
     clearActive: () => {
-      return this.setActive(-1);
+      applyActive(-1);
     },
     setLabel: (idx, newLabel) => {
       if (idx >= 0 && idx < btns.length) btns[idx].textContent = String(newLabel);
@@ -810,6 +863,7 @@ api.addSegmentedButton = function (labels = [], callbacks = [], options = {}) {
     }
   };
 };
+
 
   api.addToggleButton = function (
     text = "Toggle",
