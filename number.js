@@ -12,23 +12,15 @@
 
 function expandNumber(str) {
     if (typeof str !== 'string') return str;
-
     str = str.trim();
-
-    // Match numbers with optional decimal and commas + 1-2 letter suffix
     const match = /^([\d,]*\.?\d+)\s*([a-zA-Z]{1,2})$/.exec(str);
     if (!match) return str;
-
     let [, num, suf] = match;
-
     num = parseFloat(num.replace(/,/g, ''));
     suf = suf.toLowerCase();
-
-    if (!suffixes[suf]) return str;
-
+    if (!(suf in suffixes)) return str;
     return String(num * suffixes[suf]);
 }
-
 
     function shortenNumber(input) {
         let num = Number(String(input).replace(/,/g, ''));
