@@ -1,13 +1,16 @@
 
     const suffixes = {
-        K: 1e3,
-        M: 1e6,
-        B: 1e9,
-        T: 1e12,
-        Qu: 1e15,
-        Qi: 1e18,
-        Sx: 1e21,
-        Sp: 1e24,
+        k: 1e3,
+        m: 1e6,
+        b: 1e9,
+        t: 1e12,
+        qu: 1e15,
+        qi: 1e18,
+        sx: 1e21,
+        sp: 1e24,
+        oc: 1e27,
+        no: 1e30,
+        dc: 1e33,
     };
 
 function expandNumber(str) {
@@ -32,7 +35,7 @@ function expandNumber(str) {
                 const formatted = short >= 100 ? Math.round(short)
                     : (short < 10 ? Number(short.toFixed(1)) : Math.round(short));
                 // Ensure integer-like values print without trailing .0
-                return String(formatted) + suffix;
+                return String(formatted) + suffix.charAt(0).toUpperCase()+suffix.slice(1);;
             }
         }
         return String(num);
