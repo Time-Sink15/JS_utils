@@ -501,6 +501,107 @@ window.addEventListener("keydown", function (e) {
   // wire api functions that were shadowed by inner helpers
   // (rename inner helpers to avoid conflicts)
   // To avoid naming collision we assign wrapper functions:
+  api.addTextInput = function (width = '160px', options = {}) {
+  ensureUI();
+  if (!currentRow) api.addRow();
+
+  const {
+    placeholder = '',
+    initial = '',
+    maxLength = null,
+    onChange = null,
+    onEnter = null,
+    readonly = false,
+    type = 'text'
+  } = options || {};
+
+  // wrapper so it behaves like other inline controls
+  const wrapper = document.createElement('div');
+  wrapper.style.display = 'inline-flex';
+  wrapper.style.alignItems = 'center';
+  wrapper.style.flex = '0 0 auto';
+  wrapper.style.gap = '6px';
+
+  // input element
+  const input = document.createElement('input');
+  input.type = type;
+  input.placeholder = placeholder;
+  if (maxLength !== null) input.maxLength = maxLength;
+  input.value = initial != null ? String(initial) : '';
+
+  // normalize width
+  input.style.width = (typeof width === 'number') ? (width + 'px') : String(width);
+
+  // inline styles to avoid site CSS interference (padding, line-height, box-sizing, etc.)
+  input.style.padding = '6px 8px';
+  input.style.boxSizing = 'border-box';
+  input.style.borderRadius = '6px';
+  input.style.border = '1px solid rgba(255,255,255,0.06)';
+  input.style.background = 'rgba(255,255,255,0.02)';
+  input.style.color = 'inherit';
+  input.style.height = '32px';
+  input.style.lineHeight = '20px';
+  input.style.fontSize = '13px';
+  input.style.outline = 'none';
+  input.style.flex = '0 0 auto';
+  input.style.minWidth = '40px';
+  input.style.transition = 'box-shadow 120ms ease, border-color 120ms ease';
+
+  // hover/focus visual (inline handlers to avoid site CSS)
+  input.addEventListener('mouseenter', () => {
+    input.style.boxShadow = 'inset 0 0 0 2px rgba(255,255,255,0.02)';
+  });
+  input.addEventListener('mouseleave', () => {
+    if (document.activeElement !== input) input.style.boxShadow = 'none';
+  });
+  input.addEventListener('focus', () => {
+    input.style.boxShadow = 'inset 0 0 0 2px rgba(255,255,255,0.06)';
+    input.select && input.select();
+  });
+  input.addEventListener('blur', () => {
+    input.style.boxShadow = 'none';
+  });
+
+  // input events
+  function safeCall(fn, ...args) {
+    try { fn && fn(...args); } catch (err) { console.error('textInput handler error', err); }
+  }
+
+  input.addEventListener('input', (e) => {
+    safeCall(onChange, e.target.value, e);
+  });
+
+  input.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') {
+      safeCall(onEnter, e.target.value, e);
+    }
+  });
+
+  // assemble
+  wrapper.appendChild(input);
+  currentRow.appendChild(wrapper);
+
+  // API
+  return {
+    wrapper,
+    input,
+    getValue: () => input.value,
+    setValue: (v) => { input.value = String(v); },
+    clear: () => { input.value = ''; },
+    focus: () => { input.focus(); },
+    blur: () => { input.blur(); },
+    setReadonly: (yes = true) => { input.readOnly = !!yes; input.style.opacity = yes ? '0.7' : '1'; },
+    setPlaceholder: (txt) => { input.placeholder = String(txt); },
+    setMaxLength: (n) => { input.maxLength = n; },
+    setType: (t) => { input.type = String(t); },
+    onChange: (fn) => {
+      if (typeof fn === 'function') {
+        input.addEventListener('input', (e) => safeCall(fn, e.target.value, e));
+      }
+    }
+  };
+};
+
 api.addSlider = function (
     min = 0,
     max = 100,
