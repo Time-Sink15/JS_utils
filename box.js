@@ -122,6 +122,8 @@ window.addEventListener("keydown", function (e) {
 
 /* Rows & controls */
 .tm-box-row {
+    flex-shrink: 0;        /* prevent rows from compressing */
+    white-space: nowrap
   display: flex;
   gap: 8px;
   align-items: center;
