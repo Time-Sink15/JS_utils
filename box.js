@@ -25,7 +25,6 @@ window.addEventListener("keydown", function (e) {
     switchToTab(nextTab.id);
 });
 
-const segmentedRadioGroups = {}; 
   if (window.box) return; // do not overwrite existing
   const STYLE_ID = 'tm-box-ui-styles';
 
@@ -745,10 +744,12 @@ api.addSlider = function (
         getValue: () => Number(input.value)
     };
 };
+
 api.addSegmentedButton = function (labels = [], callbacks = [], options = {}) {
   ensureUI();
   if (!currentRow) api.addRow();
 
+  // Normalize inputs
   if (!Array.isArray(labels)) labels = [String(labels)];
   if (!Array.isArray(callbacks)) callbacks = [callbacks || (() => {})];
 
@@ -765,128 +766,176 @@ api.addSegmentedButton = function (labels = [], callbacks = [], options = {}) {
     radio = false,
     allowDeselect = false,
     initialIndex = -1,
-    id = -1      // NEW — shared radio group ID
+    id = -1   // NEW: group id (default -1 = no grouping)
   } = options || {};
 
-  // ----- Register in global group system -----
-  let group = null;
-  if (id !== -1) {
-    if (!segmentedRadioGroups[id]) {
-      segmentedRadioGroups[id] = {
-        instances: new Set(),
-        activeInstance: null,
-        activeIndex: -1
-      };
-    }
-    group = segmentedRadioGroups[id];
+  // Group registry on window so different calls can see each other
+  window.__tm_segmented_groups = window.__tm_segmented_groups || {};
+
+  // attach this control to its group list (if id != -1)
+  if (Number.isFinite(id) && id !== -1) {
+    window.__tm_segmented_groups[id] = window.__tm_segmented_groups[id] || [];
   }
 
   const container = document.createElement('div');
   container.style.display = 'inline-flex';
-  container.style.gap = spacing + "px";
+  container.style.alignItems = 'center';
+  container.style.justifyContent = 'flex-start';
+  container.style.gap = (spacing || 0) + 'px';
+  container.style.flex = '0 0 auto';
   if (width !== 'auto') container.style.width = (typeof width === 'number' ? width + 'px' : width);
 
   const btns = [];
-  let activeIndexLocal = -1;
+  let activeIndex = -1;
 
+  // local helper to set visuals without touching group behavior
+  function applyActiveLocal(idx) {
+    for (let i = 0; i < btns.length; i++) {
+      const b = btns[i];
+      if (i === idx) {
+        b.style.background = activeBg;
+        b.style.color = activeText;
+      } else {
+        b.style.background = bgColor;
+        b.style.color = textColor;
+      }
+    }
+    activeIndex = idx;
+  }
+
+  // main applyActive: also enforces group exclusivity if id != -1
+  function applyActive(idx, doNotifyGroup = true) {
+    // if group id provided and we're setting a real index, clear others first
+    if (Number.isFinite(id) && id !== -1 && idx >= 0 && doNotifyGroup) {
+      const list = window.__tm_segmented_groups[id] || [];
+      for (const inst of list) {
+        // for every other instance in the same group, clear their active visual
+        if (inst !== apiHandle) {
+          try { inst._applyActiveLocal(-1); } catch (e) { /* ignore */ }
+        }
+      }
+    }
+
+    // If radio=false and no grouping, don't highlight automatically:
+    if (!radio && !(Number.isFinite(id) && id !== -1)) {
+      // preserve semantics: do not highlight anything automatically
+      for (let i = 0; i < btns.length; i++) {
+        const b = btns[i];
+        b.style.background = bgColor;
+        b.style.color = textColor;
+      }
+      activeIndex = -1;
+      return;
+    }
+
+    // Otherwise set local visuals (this will apply even when grouped)
+    applyActiveLocal(idx);
+  }
+
+  // Helper to style buttons robustly (inline styles to avoid site overrides)
   function styleButton(btn, idx) {
     btn.type = 'button';
     btn.style.display = 'inline-flex';
     btn.style.alignItems = 'center';
     btn.style.justifyContent = 'center';
     btn.style.height = height + 'px';
-    btn.style.padding = '0 12px';
     btn.style.lineHeight = (height - 2) + 'px';
+    btn.style.padding = '0 12px';
     btn.style.margin = '0';
     btn.style.border = '1px solid ' + borderColor;
-    btn.style.boxSizing = 'border-box';
-    btn.style.cursor = 'pointer';
     btn.style.background = bgColor;
     btn.style.color = textColor;
-    btn.style.userSelect = 'none';
+    btn.style.cursor = 'pointer';
     btn.style.fontSize = '13px';
-    btn.style.transition = 'box-shadow 120ms, background 120ms, color 120ms';
+    btn.style.userSelect = 'none';
+    btn.style.boxSizing = 'border-box';
+    btn.style.outline = 'none';
+    btn.style.flex = '0 0 auto';
+    btn.style.transition = 'box-shadow 120ms ease, background 120ms ease, color 120ms ease';
 
+    // rounded corners on edges
     if (idx === 0) {
-      btn.style.borderTopLeftRadius = borderRadius + "px";
-      btn.style.borderBottomLeftRadius = borderRadius + "px";
-    } else btn.style.borderLeftWidth = "0px";
-
+      btn.style.borderTopLeftRadius = borderRadius + 'px';
+      btn.style.borderBottomLeftRadius = borderRadius + 'px';
+    } else {
+      btn.style.borderTopLeftRadius = '0px';
+      btn.style.borderBottomLeftRadius = '0px';
+    }
     if (idx === labels.length - 1) {
-      btn.style.borderTopRightRadius = borderRadius + "px";
-      btn.style.borderBottomRightRadius = borderRadius + "px";
+      btn.style.borderTopRightRadius = borderRadius + 'px';
+      btn.style.borderBottomRightRadius = borderRadius + 'px';
+    } else {
+      btn.style.borderTopRightRadius = '0px';
+      btn.style.borderBottomRightRadius = '0px';
     }
 
-    // hover outline brighten
-    btn.addEventListener("mouseenter", () => {
-      btn.style.boxShadow = "inset 0 0 0 2px rgba(255,255,255,0.07)";
+    // collapse adjacent borders for seamless look
+    if (idx > 0) {
+      btn.style.borderLeftWidth = '0px';
+    }
+
+    // Protect padding/line-height from site CSS (inline)
+    btn.style.padding = '0 12px';
+    btn.style.lineHeight = (height - 2) + 'px';
+
+    // Hover: brighten outline (subtle)
+    btn.addEventListener('mouseenter', () => {
+      btn.style.boxShadow = 'inset 0 0 0 2px rgba(255,255,255,0.07)';
     });
-    btn.addEventListener("mouseleave", () => {
-      btn.style.boxShadow = "none";
+    btn.addEventListener('mouseleave', () => {
+      btn.style.boxShadow = 'none';
+    });
+
+    // Focus style
+    btn.addEventListener('focus', () => {
+      btn.style.boxShadow = 'inset 0 0 0 2px rgba(255,255,255,0.08)';
+    });
+    btn.addEventListener('blur', () => {
+      btn.style.boxShadow = 'none';
     });
   }
 
-  function applyLocalActive(idx) {
-    for (let i = 0; i < btns.length; i++) {
-      if (i === idx) {
-        btns[i].style.background = activeBg;
-        btns[i].style.color = activeText;
-      } else {
-        btns[i].style.background = bgColor;
-        btns[i].style.color = textColor;
-      }
-    }
-    activeIndexLocal = idx;
-  }
-
-  function clearLocalActive() {
-    for (let b of btns) {
-      b.style.background = bgColor;
-      b.style.color = textColor;
-    }
-    activeIndexLocal = -1;
-  }
-
-  // ----- Shared ID selection logic -----
-  function activateShared(idx) {
-    if (!group) return applyLocalActive(idx);
-
-    // deactivate previous instance in the group
-    if (group.activeInstance && group.activeInstance !== apiObj) {
-      group.activeInstance.__clearLocalOnly();
-    }
-
-    applyLocalActive(idx);
-
-    // update global record
-    group.activeInstance = apiObj;
-    group.activeIndex = idx;
-  }
-
-  function clearShared() {
-    if (!group) return clearLocalActive();
-    if (group.activeInstance === apiObj) {
-      group.activeInstance = null;
-      group.activeIndex = -1;
-    }
-    clearLocalActive();
-  }
-
-  // Build the buttons
+  // create buttons and wire click handlers
   for (let i = 0; i < labels.length; i++) {
-    const btn = document.createElement("button");
-    btn.textContent = labels[i];
+    const text = String(labels[i] == null ? '' : labels[i]);
+    const cb = (typeof callbacks[i] === 'function') ? callbacks[i] : (() => {});
+    const btn = document.createElement('button');
+
+    btn.textContent = text;
     styleButton(btn, i);
 
-    btn.addEventListener("click", () => {
-      const fn = callbacks[i];
-      if (typeof fn === "function") fn();
+    btn.addEventListener('click', (ev) => {
+      try { cb(ev); } catch (err) { console.error('segmented callback error', err); }
 
+      // Group behavior: if id specified, clear other instances in group
+      if (Number.isFinite(id) && id !== -1) {
+        const list = window.__tm_segmented_groups[id] || [];
+        for (const inst of list) {
+          if (inst !== apiHandle) {
+            try { inst._applyActiveLocal(-1); } catch (e) { /* ignore */ }
+            inst._activeIndex = -1;
+          }
+        }
+      }
+
+      // Radio semantics within this control
       if (radio) {
-        if (activeIndexLocal === i && allowDeselect) {
-          clearShared();
+        if (activeIndex === i) {
+          if (allowDeselect) {
+            applyActive(-1);
+          } else {
+            applyActive(activeIndex); // no change
+          }
         } else {
-          activateShared(i);
+          applyActive(i);
+        }
+      } else {
+        // not radio: if grouped, we still set active visually for this one and clear others (group exclusivity)
+        if (Number.isFinite(id) && id !== -1) {
+          applyActive(i);
+        } else {
+          // neither radio nor grouped -> do not auto-highlight
+          // (user can call setActive to highlight manually)
         }
       }
     });
@@ -895,34 +944,92 @@ api.addSegmentedButton = function (labels = [], callbacks = [], options = {}) {
     btns.push(btn);
   }
 
-  // Initial highlight
-  if (radio && initialIndex >= 0 && initialIndex < btns.length) {
-    activateShared(initialIndex);
-  }
-
-  currentRow.appendChild(container);
-
-  // instance control object
-  const apiObj = {
+  // instance handle object (we register a few internals used by the group logic)
+  const apiHandle = {
     container,
     buttons: btns,
-    getActive: () => activeIndexLocal,
-    setActive: (idx) => {
-      if (idx < 0 || idx >= btns.length) return clearShared();
-      activateShared(idx);
-    },
-    clearActive: () => clearShared(),
-
-    // used internally by shared-ID system
-    __clearLocalOnly: () => clearLocalActive()
+    _applyActiveLocal: applyActiveLocal, // used by other group members to clear
+    _activeIndex: activeIndex
   };
 
-  // register in shared group
-  if (group) group.instances.add(apiObj);
+  // register in group list if needed
+  if (Number.isFinite(id) && id !== -1) {
+    window.__tm_segmented_groups[id].push(apiHandle);
+  }
 
-  return apiObj;
+  // set initial active if requested
+  if (Number.isFinite(initialIndex) && initialIndex >= 0 && initialIndex < btns.length) {
+    // if grouped, we must clear others in the group first
+    if (Number.isFinite(id) && id !== -1) {
+      const list = window.__tm_segmented_groups[id] || [];
+      for (const inst of list) {
+        if (inst !== apiHandle) {
+          try { inst._applyActiveLocal(-1); } catch (e) {}
+          inst._activeIndex = -1;
+        }
+      }
+    }
+    applyActive(initialIndex, false);
+  } else {
+    // if not radio and not grouped, ensure no highlight
+    if (!radio && !(Number.isFinite(id) && id !== -1)) {
+      applyActive(-1, false);
+    } else {
+      // leave visual state cleared
+      applyActive(-1, false);
+    }
+  }
+
+  // attach to current row
+  currentRow.appendChild(container);
+
+  // public API object returned to caller
+  const publicObj = {
+    container,
+    buttons: btns,
+    getActive: () => activeIndex,
+    setActive: (idx) => {
+      if (idx == null || idx < 0 || idx >= btns.length) {
+        // clear visuals (and clear group if grouped)
+        if (Number.isFinite(id) && id !== -1) {
+          // clearing this instance still should not make others green; it's fine
+        }
+        applyActive(-1);
+        return;
+      }
+      // If setActive is called, enforce group exclusivity as click would
+      if (Number.isFinite(id) && id !== -1) {
+        const list = window.__tm_segmented_groups[id] || [];
+        for (const inst of list) {
+          if (inst !== apiHandle) {
+            try { inst._applyActiveLocal(-1); } catch (e) {}
+            inst._activeIndex = -1;
+          }
+        }
+      }
+      applyActive(idx);
+    },
+    clearActive: () => { applyActive(-1); },
+    setLabel: (idx, newLabel) => {
+      if (idx >= 0 && idx < btns.length) btns[idx].textContent = String(newLabel);
+    },
+    enable: (idx, yes = true) => {
+      if (idx >= 0 && idx < btns.length) {
+        btns[idx].disabled = !yes;
+        btns[idx].style.opacity = yes ? '1' : '0.5';
+        btns[idx].style.cursor = yes ? 'pointer' : 'default';
+      }
+    },
+    // internal: group id (for debugging)
+    _groupId: id
+  };
+
+  // expose internals on apiHandle so group clearing code can access them
+  apiHandle._public = publicObj;
+
+  // done
+  return publicObj;
 };
-
 
 
   api.addToggleButton = function (
