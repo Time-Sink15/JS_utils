@@ -816,13 +816,11 @@ api.addSegmentedButton = function (labels = [], callbacks = [], options = {}) {
     radio = false,
     allowDeselect = false,
     initialIndex = -1,
-    id = -1   // NEW: group id (default -1 = no grouping)
+    id = -1,
+    repeat = false  // NEW: repeat currently active callback each tick
   } = options || {};
 
-  // Group registry on window so different calls can see each other
   window.__tm_segmented_groups = window.__tm_segmented_groups || {};
-
-  // attach this control to its group list (if id != -1)
   if (Number.isFinite(id) && id !== -1) {
     window.__tm_segmented_groups[id] = window.__tm_segmented_groups[id] || [];
   }
@@ -838,7 +836,29 @@ api.addSegmentedButton = function (labels = [], callbacks = [], options = {}) {
   const btns = [];
   let activeIndex = -1;
 
-  // local helper to set visuals without touching group behavior
+  // ---- Tick loop for repeated callbacks ----
+  let running = false;
+  function tickLoop() {
+    if (!repeat || activeIndex < 0 || !btns[activeIndex]) return;
+    try {
+      const cb = callbacks[activeIndex];
+      if (typeof cb === 'function') cb();
+    } catch (e) { console.error('segmented repeat callback error', e); }
+    if (running) requestAnimationFrame(tickLoop);
+  }
+
+  function startLoop() {
+    if (!running && repeat && activeIndex >= 0) {
+      running = true;
+      requestAnimationFrame(tickLoop);
+    }
+  }
+
+  function stopLoop() {
+    running = false;
+  }
+
+  // ---- Visual helpers ----
   function applyActiveLocal(idx) {
     for (let i = 0; i < btns.length; i++) {
       const b = btns[i];
@@ -851,38 +871,36 @@ api.addSegmentedButton = function (labels = [], callbacks = [], options = {}) {
       }
     }
     activeIndex = idx;
+    if (repeat) {
+      stopLoop();
+      if (activeIndex >= 0) startLoop();
+    }
   }
 
-  // main applyActive: also enforces group exclusivity if id != -1
   function applyActive(idx, doNotifyGroup = true) {
-    // if group id provided and we're setting a real index, clear others first
     if (Number.isFinite(id) && id !== -1 && idx >= 0 && doNotifyGroup) {
       const list = window.__tm_segmented_groups[id] || [];
       for (const inst of list) {
-        // for every other instance in the same group, clear their active visual
         if (inst !== apiHandle) {
-          try { inst._applyActiveLocal(-1); } catch (e) { /* ignore */ }
+          try { inst._applyActiveLocal(-1); inst._activeIndex = -1; } catch (e) {}
         }
       }
     }
 
-    // If radio=false and no grouping, don't highlight automatically:
     if (!radio && !(Number.isFinite(id) && id !== -1)) {
-      // preserve semantics: do not highlight anything automatically
       for (let i = 0; i < btns.length; i++) {
-        const b = btns[i];
-        b.style.background = bgColor;
-        b.style.color = textColor;
+        btns[i].style.background = bgColor;
+        btns[i].style.color = textColor;
       }
       activeIndex = -1;
+      stopLoop();
       return;
     }
 
-    // Otherwise set local visuals (this will apply even when grouped)
     applyActiveLocal(idx);
   }
 
-  // Helper to style buttons robustly (inline styles to avoid site overrides)
+  // ---- Style each button ----
   function styleButton(btn, idx) {
     btn.type = 'button';
     btn.style.display = 'inline-flex';
@@ -903,7 +921,6 @@ api.addSegmentedButton = function (labels = [], callbacks = [], options = {}) {
     btn.style.flex = '0 0 auto';
     btn.style.transition = 'box-shadow 120ms ease, background 120ms ease, color 120ms ease';
 
-    // rounded corners on edges
     if (idx === 0) {
       btn.style.borderTopLeftRadius = borderRadius + 'px';
       btn.style.borderBottomLeftRadius = borderRadius + 'px';
@@ -919,74 +936,41 @@ api.addSegmentedButton = function (labels = [], callbacks = [], options = {}) {
       btn.style.borderBottomRightRadius = '0px';
     }
 
-    // collapse adjacent borders for seamless look
-    if (idx > 0) {
-      btn.style.borderLeftWidth = '0px';
-    }
+    if (idx > 0) btn.style.borderLeftWidth = '0px';
 
-    // Protect padding/line-height from site CSS (inline)
-    btn.style.padding = '0 12px';
-    btn.style.lineHeight = (height - 2) + 'px';
-
-    // Hover: brighten outline (subtle)
-    btn.addEventListener('mouseenter', () => {
-      btn.style.boxShadow = 'inset 0 0 0 2px rgba(255,255,255,0.07)';
-    });
-    btn.addEventListener('mouseleave', () => {
-      btn.style.boxShadow = 'none';
-    });
-
-    // Focus style
-    btn.addEventListener('focus', () => {
-      btn.style.boxShadow = 'inset 0 0 0 2px rgba(255,255,255,0.08)';
-    });
-    btn.addEventListener('blur', () => {
-      btn.style.boxShadow = 'none';
-    });
+    btn.addEventListener('mouseenter', () => btn.style.boxShadow = 'inset 0 0 0 2px rgba(255,255,255,0.07)');
+    btn.addEventListener('mouseleave', () => btn.style.boxShadow = 'none');
+    btn.addEventListener('focus', () => btn.style.boxShadow = 'inset 0 0 0 2px rgba(255,255,255,0.08)');
+    btn.addEventListener('blur', () => btn.style.boxShadow = 'none');
   }
 
-  // create buttons and wire click handlers
+  // ---- Create buttons and click handlers ----
   for (let i = 0; i < labels.length; i++) {
     const text = String(labels[i] == null ? '' : labels[i]);
     const cb = (typeof callbacks[i] === 'function') ? callbacks[i] : (() => {});
     const btn = document.createElement('button');
-
     btn.textContent = text;
     styleButton(btn, i);
 
     btn.addEventListener('click', (ev) => {
       try { cb(ev); } catch (err) { console.error('segmented callback error', err); }
 
-      // Group behavior: if id specified, clear other instances in group
       if (Number.isFinite(id) && id !== -1) {
         const list = window.__tm_segmented_groups[id] || [];
         for (const inst of list) {
-          if (inst !== apiHandle) {
-            try { inst._applyActiveLocal(-1); } catch (e) { /* ignore */ }
-            inst._activeIndex = -1;
-          }
+          if (inst !== apiHandle) { inst._applyActiveLocal(-1); inst._activeIndex = -1; }
         }
       }
 
-      // Radio semantics within this control
       if (radio) {
         if (activeIndex === i) {
-          if (allowDeselect) {
-            applyActive(-1);
-          } else {
-            applyActive(activeIndex); // no change
-          }
+          if (allowDeselect) applyActive(-1);
+          else applyActive(activeIndex);
         } else {
           applyActive(i);
         }
       } else {
-        // not radio: if grouped, we still set active visually for this one and clear others (group exclusivity)
-        if (Number.isFinite(id) && id !== -1) {
-          applyActive(i);
-        } else {
-          // neither radio nor grouped -> do not auto-highlight
-          // (user can call setActive to highlight manually)
-        }
+        if (Number.isFinite(id) && id !== -1) applyActive(i);
       }
     });
 
@@ -994,91 +978,23 @@ api.addSegmentedButton = function (labels = [], callbacks = [], options = {}) {
     btns.push(btn);
   }
 
-  // instance handle object (we register a few internals used by the group logic)
-  const apiHandle = {
-    container,
-    buttons: btns,
-    _applyActiveLocal: applyActiveLocal, // used by other group members to clear
-    _activeIndex: activeIndex
-  };
+  const apiHandle = { container, buttons: btns, _applyActiveLocal: applyActiveLocal, _activeIndex: activeIndex };
+  if (Number.isFinite(id) && id !== -1) window.__tm_segmented_groups[id].push(apiHandle);
 
-  // register in group list if needed
-  if (Number.isFinite(id) && id !== -1) {
-    window.__tm_segmented_groups[id].push(apiHandle);
-  }
+  if (Number.isFinite(initialIndex) && initialIndex >= 0 && initialIndex < btns.length) applyActive(initialIndex, false);
+  else { if (!radio && !(Number.isFinite(id) && id !== -1)) applyActive(-1, false); }
 
-  // set initial active if requested
-  if (Number.isFinite(initialIndex) && initialIndex >= 0 && initialIndex < btns.length) {
-    // if grouped, we must clear others in the group first
-    if (Number.isFinite(id) && id !== -1) {
-      const list = window.__tm_segmented_groups[id] || [];
-      for (const inst of list) {
-        if (inst !== apiHandle) {
-          try { inst._applyActiveLocal(-1); } catch (e) {}
-          inst._activeIndex = -1;
-        }
-      }
-    }
-    applyActive(initialIndex, false);
-  } else {
-    // if not radio and not grouped, ensure no highlight
-    if (!radio && !(Number.isFinite(id) && id !== -1)) {
-      applyActive(-1, false);
-    } else {
-      // leave visual state cleared
-      applyActive(-1, false);
-    }
-  }
-
-  // attach to current row
   currentRow.appendChild(container);
 
-  // public API object returned to caller
-  const publicObj = {
+  return {
     container,
     buttons: btns,
     getActive: () => activeIndex,
-    setActive: (idx) => {
-      if (idx == null || idx < 0 || idx >= btns.length) {
-        // clear visuals (and clear group if grouped)
-        if (Number.isFinite(id) && id !== -1) {
-          // clearing this instance still should not make others green; it's fine
-        }
-        applyActive(-1);
-        return;
-      }
-      // If setActive is called, enforce group exclusivity as click would
-      if (Number.isFinite(id) && id !== -1) {
-        const list = window.__tm_segmented_groups[id] || [];
-        for (const inst of list) {
-          if (inst !== apiHandle) {
-            try { inst._applyActiveLocal(-1); } catch (e) {}
-            inst._activeIndex = -1;
-          }
-        }
-      }
-      applyActive(idx);
-    },
-    clearActive: () => { applyActive(-1); },
-    setLabel: (idx, newLabel) => {
-      if (idx >= 0 && idx < btns.length) btns[idx].textContent = String(newLabel);
-    },
-    enable: (idx, yes = true) => {
-      if (idx >= 0 && idx < btns.length) {
-        btns[idx].disabled = !yes;
-        btns[idx].style.opacity = yes ? '1' : '0.5';
-        btns[idx].style.cursor = yes ? 'pointer' : 'default';
-      }
-    },
-    // internal: group id (for debugging)
-    _groupId: id
+    setActive: (idx) => applyActive(idx),
+    clearActive: () => applyActive(-1),
+    setLabel: (idx, newLabel) => { if (idx >= 0 && idx < btns.length) btns[idx].textContent = String(newLabel); },
+    enable: (idx, yes = true) => { if (idx >= 0 && idx < btns.length) { btns[idx].disabled = !yes; btns[idx].style.opacity = yes ? '1' : '0.5'; btns[idx].style.cursor = yes ? 'pointer' : 'default'; } }
   };
-
-  // expose internals on apiHandle so group clearing code can access them
-  apiHandle._public = publicObj;
-
-  // done
-  return publicObj;
 };
 
 
