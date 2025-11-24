@@ -224,7 +224,28 @@ window.addEventListener("keydown", function (e) {
     root.appendChild(contentArea);
 
     document.body.appendChild(root);
-
+function shieldElement(el) {
+  if (!el) return;
+  const events = ['mousedown','pointerdown','touchstart','click','selectstart','mouseup'];
+  const handler = function(e) {
+    try {
+      if (el.contains(e.target)) {
+        e.stopImmediatePropagation();
+      }
+    } catch (err) {
+      console.error('shieldElement error', err);
+    }
+  };
+  events.forEach(ev => window.addEventListener(ev, handler, true));
+  el.style.pointerEvents = 'auto';
+  el.tabIndex = -1;
+  el.addEventListener('focus', (e) => { e.stopImmediatePropagation(); }, true);
+  el.addEventListener('blur', (e) => { e.stopImmediatePropagation(); }, true);
+  return function unshield() {
+    events.forEach(ev => window.removeEventListener(ev, handler, true));
+  };
+}
+shieldElement(root);
     makeDraggable(root, header, (x, y) => {
       // keep inside viewport
       const vw = Math.max(document.documentElement.clientWidth, window.innerWidth || 0);
