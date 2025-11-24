@@ -275,7 +275,7 @@ window.addEventListener("keydown", function (e) {
 
   return window.__tm_safeShieldUninstall;
 })();
-(function installKeyboardShield(rootEl='.tm-box-ui') {
+function installKeyboardShield(rootEl) {
   if (!rootEl) throw new Error('installKeyboardShield: root element required');
   function focusInsideBox() {
     try {
@@ -362,7 +362,8 @@ window.addEventListener("keydown", function (e) {
     window.onkeyup = Original.win_onkeyup;
   }
   return { uninstall };
-})();
+}
+    installKeyboardShield(root);
     makeDraggable(root, header, (x, y) => {
       // keep inside viewport
       const vw = Math.max(document.documentElement.clientWidth, window.innerWidth || 0);
