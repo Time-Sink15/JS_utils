@@ -224,28 +224,58 @@ window.addEventListener("keydown", function (e) {
     root.appendChild(contentArea);
 
     document.body.appendChild(root);
-function shieldElement(el) {
-  if (!el) return;
-  const events = ['mousedown','pointerdown','touchstart','click','selectstart','mouseup'];
-  const handler = function(e) {
-    try {
-      if (el.contains(e.target)) {
-        e.stopImmediatePropagation();
+(function installSafeShield(rootSelector = '.tm-box-ui') {
+  const root = document.querySelector(rootSelector);
+  if (!root) {
+    console.warn('SafeShield: box root not found with selector', rootSelector);
+    return;
+  }
+  const originals = {
+    doc_onmousedown: document.onmousedown,
+    doc_onselectstart: document.onselectstart,
+    win_onmousedown: window.onmousedown,
+    win_onselectstart: window.onselectstart
+  };
+  function wrapperFactory(orig) {
+    return function wrappedEventHandler(e) {
+      try {
+        if (e && e.target && root.contains(e.target)) {
+          return;
+        }
+      } catch (err) { /* swallow */ }
+      if (typeof orig === 'function') {
+        try { orig.call(this, e); } catch (err) { console.error('orig handler error', err); }
       }
-    } catch (err) {
-      console.error('shieldElement error', err);
-    }
+    };
+  }
+  document.onmousedown = wrapperFactory(originals.doc_onmousedown);
+  document.onselectstart = wrapperFactory(originals.doc_onselectstart);
+  window.onmousedown = wrapperFactory(originals.win_onmousedown);
+  window.onselectstart = wrapperFactory(originals.win_onselectstart);
+  const markHandler = function(e) {
+    try { if (root.contains(e.target)) e.__tm_inside_box = true; }
+    catch (err) {}
   };
-  events.forEach(ev => window.addEventListener(ev, handler, true));
-  el.style.pointerEvents = 'auto';
-  el.tabIndex = -1;
-  el.addEventListener('focus', (e) => { e.stopImmediatePropagation(); }, true);
-  el.addEventListener('blur', (e) => { e.stopImmediatePropagation(); }, true);
-  return function unshield() {
-    events.forEach(ev => window.removeEventListener(ev, handler, true));
+  ['mousedown','pointerdown','touchstart','click','selectstart'].forEach(ev =>
+    window.addEventListener(ev, markHandler, true)
+  );
+  console.log('SafeShield installed for', root);
+  window.__tm_safeShieldUninstall = function() {
+    document.onmousedown = originals.doc_onmousedown;
+    document.onselectstart = originals.doc_onselectstart;
+    window.onmousedown = originals.win_onmousedown;
+    window.onselectstart = originals.win_onselectstart;
+
+    // remove mark handler
+    ['mousedown','pointerdown','touchstart','click','selectstart'].forEach(ev =>
+      window.removeEventListener(ev, markHandler, true)
+    );
+    console.log('SafeShield uninstalled (restored originals).');
   };
-}
-shieldElement(root);
+
+  return window.__tm_safeShieldUninstall;
+})();
+
     makeDraggable(root, header, (x, y) => {
       // keep inside viewport
       const vw = Math.max(document.documentElement.clientWidth, window.innerWidth || 0);
