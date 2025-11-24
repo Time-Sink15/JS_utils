@@ -25,6 +25,7 @@ window.addEventListener("keydown", function (e) {
     switchToTab(nextTab.id);
 });
 
+const segmentedRadioGroups = {}; 
   if (window.box) return; // do not overwrite existing
   const STYLE_ID = 'tm-box-ui-styles';
 
@@ -748,7 +749,6 @@ api.addSegmentedButton = function (labels = [], callbacks = [], options = {}) {
   ensureUI();
   if (!currentRow) api.addRow();
 
-  // Normalize inputs
   if (!Array.isArray(labels)) labels = [String(labels)];
   if (!Array.isArray(callbacks)) callbacks = [callbacks || (() => {})];
 
@@ -762,139 +762,132 @@ api.addSegmentedButton = function (labels = [], callbacks = [], options = {}) {
     activeText = '#000',
     borderColor = 'rgba(255,255,255,0.06)',
     spacing = 0,
-    radio = false,            // NEW: if true -> radio behavior (one green at a time)
-    allowDeselect = false,    // NEW: if true, clicking active radio deselects it
-    initialIndex = -1
+    radio = false,
+    allowDeselect = false,
+    initialIndex = -1,
+    id = -1      // NEW — shared radio group ID
   } = options || {};
+
+  // ----- Register in global group system -----
+  let group = null;
+  if (id !== -1) {
+    if (!segmentedRadioGroups[id]) {
+      segmentedRadioGroups[id] = {
+        instances: new Set(),
+        activeInstance: null,
+        activeIndex: -1
+      };
+    }
+    group = segmentedRadioGroups[id];
+  }
 
   const container = document.createElement('div');
   container.style.display = 'inline-flex';
-  container.style.alignItems = 'center';
-  container.style.justifyContent = 'flex-start';
-  container.style.gap = (spacing || 0) + 'px';
-  container.style.flex = '0 0 auto';
+  container.style.gap = spacing + "px";
   if (width !== 'auto') container.style.width = (typeof width === 'number' ? width + 'px' : width);
 
   const btns = [];
-  let activeIndex = -1;
+  let activeIndexLocal = -1;
 
-  // Helper to apply style for a segment button
   function styleButton(btn, idx) {
     btn.type = 'button';
     btn.style.display = 'inline-flex';
     btn.style.alignItems = 'center';
     btn.style.justifyContent = 'center';
     btn.style.height = height + 'px';
-    btn.style.lineHeight = (height - 2) + 'px';
     btn.style.padding = '0 12px';
+    btn.style.lineHeight = (height - 2) + 'px';
     btn.style.margin = '0';
     btn.style.border = '1px solid ' + borderColor;
+    btn.style.boxSizing = 'border-box';
+    btn.style.cursor = 'pointer';
     btn.style.background = bgColor;
     btn.style.color = textColor;
-    btn.style.cursor = 'pointer';
-    btn.style.fontSize = '13px';
     btn.style.userSelect = 'none';
-    btn.style.boxSizing = 'border-box';
-    btn.style.outline = 'none';
-    btn.style.flex = '0 0 auto';
-    btn.style.transition = 'box-shadow 120ms ease, background 120ms ease, color 120ms ease';
-    // rounded corners on edges
+    btn.style.fontSize = '13px';
+    btn.style.transition = 'box-shadow 120ms, background 120ms, color 120ms';
+
     if (idx === 0) {
-      btn.style.borderTopLeftRadius = borderRadius + 'px';
-      btn.style.borderBottomLeftRadius = borderRadius + 'px';
-    } else {
-      btn.style.borderTopLeftRadius = '0px';
-      btn.style.borderBottomLeftRadius = '0px';
-    }
+      btn.style.borderTopLeftRadius = borderRadius + "px";
+      btn.style.borderBottomLeftRadius = borderRadius + "px";
+    } else btn.style.borderLeftWidth = "0px";
+
     if (idx === labels.length - 1) {
-      btn.style.borderTopRightRadius = borderRadius + 'px';
-      btn.style.borderBottomRightRadius = borderRadius + 'px';
-    } else {
-      btn.style.borderTopRightRadius = '0px';
-      btn.style.borderBottomRightRadius = '0px';
+      btn.style.borderTopRightRadius = borderRadius + "px";
+      btn.style.borderBottomRightRadius = borderRadius + "px";
     }
 
-    // collapse adjacent borders for seamless look
-    if (idx > 0) {
-      btn.style.borderLeftWidth = '0px';
-    }
-
-    // Protect padding/line-height from site CSS (inline)
-    btn.style.padding = '0 12px';
-    btn.style.lineHeight = (height - 2) + 'px';
-
-    // Hover: brighten outline (subtle)
-    btn.addEventListener('mouseenter', () => {
-      btn.style.boxShadow = 'inset 0 0 0 2px rgba(255,255,255,0.07)';
+    // hover outline brighten
+    btn.addEventListener("mouseenter", () => {
+      btn.style.boxShadow = "inset 0 0 0 2px rgba(255,255,255,0.07)";
     });
-    btn.addEventListener('mouseleave', () => {
-      btn.style.boxShadow = 'none';
-    });
-
-    // Focus style
-    btn.addEventListener('focus', () => {
-      btn.style.boxShadow = 'inset 0 0 0 2px rgba(255,255,255,0.08)';
-    });
-    btn.addEventListener('blur', () => {
-      btn.style.boxShadow = 'none';
+    btn.addEventListener("mouseleave", () => {
+      btn.style.boxShadow = "none";
     });
   }
 
-  function applyActive(idx) {
-    // If radio === false, do not visually highlight anything
-    if (!radio) {
-      activeIndex = -1;
-      for (let i = 0; i < btns.length; i++) {
-        const b = btns[i];
-        b.style.background = bgColor;
-        b.style.color = textColor;
-      }
-      return;
-    }
-
-    // radio === true -> one active at a time
+  function applyLocalActive(idx) {
     for (let i = 0; i < btns.length; i++) {
-      const b = btns[i];
       if (i === idx) {
-        b.style.background = activeBg;
-        b.style.color = activeText;
+        btns[i].style.background = activeBg;
+        btns[i].style.color = activeText;
       } else {
-        b.style.background = bgColor;
-        b.style.color = textColor;
+        btns[i].style.background = bgColor;
+        btns[i].style.color = textColor;
       }
     }
-    activeIndex = idx;
+    activeIndexLocal = idx;
   }
 
-  // create buttons
+  function clearLocalActive() {
+    for (let b of btns) {
+      b.style.background = bgColor;
+      b.style.color = textColor;
+    }
+    activeIndexLocal = -1;
+  }
+
+  // ----- Shared ID selection logic -----
+  function activateShared(idx) {
+    if (!group) return applyLocalActive(idx);
+
+    // deactivate previous instance in the group
+    if (group.activeInstance && group.activeInstance !== apiObj) {
+      group.activeInstance.__clearLocalOnly();
+    }
+
+    applyLocalActive(idx);
+
+    // update global record
+    group.activeInstance = apiObj;
+    group.activeIndex = idx;
+  }
+
+  function clearShared() {
+    if (!group) return clearLocalActive();
+    if (group.activeInstance === apiObj) {
+      group.activeInstance = null;
+      group.activeIndex = -1;
+    }
+    clearLocalActive();
+  }
+
+  // Build the buttons
   for (let i = 0; i < labels.length; i++) {
-    const text = String(labels[i] == null ? '' : labels[i]);
-    const cb = (typeof callbacks[i] === 'function') ? callbacks[i] : (() => {});
-    const btn = document.createElement('button');
-
-    btn.textContent = text;
-
+    const btn = document.createElement("button");
+    btn.textContent = labels[i];
     styleButton(btn, i);
 
-    btn.addEventListener('click', (ev) => {
-      try { cb(ev); } catch (err) { console.error('segmented callback error', err); }
+    btn.addEventListener("click", () => {
+      const fn = callbacks[i];
+      if (typeof fn === "function") fn();
 
       if (radio) {
-        if (activeIndex === i) {
-          // already active
-          if (allowDeselect) {
-            // deselect
-            applyActive(-1);
-          } else {
-            // keep it active (no change)
-            applyActive(activeIndex);
-          }
+        if (activeIndexLocal === i && allowDeselect) {
+          clearShared();
         } else {
-          applyActive(i);
+          activateShared(i);
         }
-      } else {
-        // radio === false -> do not visually highlight any segment
-        // (no automatic green). If you want to manually highlight, use setActive.
       }
     });
 
@@ -902,72 +895,34 @@ api.addSegmentedButton = function (labels = [], callbacks = [], options = {}) {
     btns.push(btn);
   }
 
-  // set initial active if requested and radio true
-  if (radio && Number.isFinite(initialIndex) && initialIndex >= 0 && initialIndex < btns.length) {
-    applyActive(initialIndex);
-  } else if (!radio) {
-    // ensure no highlight
-    applyActive(-1);
+  // Initial highlight
+  if (radio && initialIndex >= 0 && initialIndex < btns.length) {
+    activateShared(initialIndex);
   }
 
-  // attach to current row
   currentRow.appendChild(container);
 
-  // return control object
-  return {
+  // instance control object
+  const apiObj = {
     container,
     buttons: btns,
-    getActive: () => activeIndex,
+    getActive: () => activeIndexLocal,
     setActive: (idx) => {
-      if (!radio) {
-        // if not radio, calling setActive will still apply visuals if you want it
-        if (idx == null || idx < 0 || idx >= btns.length) {
-          activeIndex = -1;
-          for (const b of btns) {
-            b.style.background = bgColor;
-            b.style.color = textColor;
-          }
-          return;
-        }
-        // apply visual selection even though radio was false (gives control to caller)
-        activeIndex = idx;
-        for (let i = 0; i < btns.length; i++) {
-          const b = btns[i];
-          if (i === idx) {
-            b.style.background = activeBg;
-            b.style.color = activeText;
-          } else {
-            b.style.background = bgColor;
-            b.style.color = textColor;
-          }
-        }
-      } else {
-        if (idx == null || idx < 0 || idx >= btns.length) {
-          activeIndex = -1;
-          for (const b of btns) {
-            b.style.background = bgColor;
-            b.style.color = textColor;
-          }
-          return;
-        }
-        applyActive(idx);
-      }
+      if (idx < 0 || idx >= btns.length) return clearShared();
+      activateShared(idx);
     },
-    clearActive: () => {
-      applyActive(-1);
-    },
-    setLabel: (idx, newLabel) => {
-      if (idx >= 0 && idx < btns.length) btns[idx].textContent = String(newLabel);
-    },
-    enable: (idx, yes = true) => {
-      if (idx >= 0 && idx < btns.length) {
-        btns[idx].disabled = !yes;
-        btns[idx].style.opacity = yes ? '1' : '0.5';
-        btns[idx].style.cursor = yes ? 'pointer' : 'default';
-      }
-    }
+    clearActive: () => clearShared(),
+
+    // used internally by shared-ID system
+    __clearLocalOnly: () => clearLocalActive()
   };
+
+  // register in shared group
+  if (group) group.instances.add(apiObj);
+
+  return apiObj;
 };
+
 
 
   api.addToggleButton = function (
