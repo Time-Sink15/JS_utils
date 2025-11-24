@@ -259,7 +259,6 @@ window.addEventListener("keydown", function (e) {
   ['mousedown','pointerdown','touchstart','click','selectstart'].forEach(ev =>
     window.addEventListener(ev, markHandler, true)
   );
-  console.log('SafeShield installed for', root);
   window.__tm_safeShieldUninstall = function() {
     document.onmousedown = originals.doc_onmousedown;
     document.onselectstart = originals.doc_onselectstart;
