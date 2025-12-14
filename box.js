@@ -1,12 +1,9 @@
 (function () {
-  // --- Keyboard Tab Cycling ---
 window.addEventListener("keydown", function (e) {
-    if (!root || !tabs.length) return; // no UI yet
-
-    // Must be TAB
+    if (!root || !tabs.length) return;
     if (e.key !== "Tab") return;
 
-    e.preventDefault(); // stop browser focus movement
+    e.preventDefault();
 
     let index = tabs.findIndex(t => t.id === currentTab?.id);
     if (index === -1) index = 0;
@@ -25,7 +22,7 @@ window.addEventListener("keydown", function (e) {
     switchToTab(nextTab.id);
 });
 
-  if (window.box) return; // do not overwrite existing
+  if (window.box) return;
   const STYLE_ID = 'tm-box-ui-styles';
 
   function addStyles() {
@@ -119,10 +116,8 @@ window.addEventListener("keydown", function (e) {
   flex: 1 1 auto;
   min-height: 50px;
 }
-
-/* Rows & controls */
 .tm-box-row {
-    flex-shrink: 0;        /* prevent rows from compressing */
+    flex-shrink: 0;
     white-space: nowrap
   display: flex;
   gap: 8px;
@@ -159,9 +154,8 @@ window.addEventListener("keydown", function (e) {
   }
 
 
-  // Create DOM structure
   let root, header, tabsBar, contentArea, titleEl, toggleBtn;
-  let tabs = []; // {id, name, tabEl, contentEl, rows: []}
+  let tabs = [];
   let currentTab = null;
   let currentRow = null;
   let dynamicLabels = []; // {el, fn}
@@ -179,7 +173,6 @@ window.addEventListener("keydown", function (e) {
     root.style.width = '380px';
     root.style.height = '320px';
 
-    // Header (draggable)
     header = document.createElement('div');
     header.className = 'tm-box-header';
     titleEl = document.createElement('div');
@@ -189,7 +182,6 @@ window.addEventListener("keydown", function (e) {
     const controls = document.createElement('div');
     controls.className = 'tm-box-controls';
 
-    // collapse toggle
     toggleBtn = document.createElement('button');
     toggleBtn.className = 'tm-box-toggle-btn';
     toggleBtn.textContent = '—';
@@ -264,8 +256,6 @@ window.addEventListener("keydown", function (e) {
     document.onselectstart = originals.doc_onselectstart;
     window.onmousedown = originals.win_onmousedown;
     window.onselectstart = originals.win_onselectstart;
-
-    // remove mark handler
     ['mousedown','pointerdown','touchstart','click','selectstart'].forEach(ev =>
       window.removeEventListener(ev, markHandler, true)
     );
@@ -276,7 +266,6 @@ window.addEventListener("keydown", function (e) {
 })();
 
     makeDraggable(root, header, (x, y) => {
-      // keep inside viewport
       const vw = Math.max(document.documentElement.clientWidth, window.innerWidth || 0);
       const vh = Math.max(document.documentElement.clientHeight, window.innerHeight || 0);
       const rect = root.getBoundingClientRect();
