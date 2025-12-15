@@ -1012,8 +1012,6 @@ api.addSegmentedButton = function (labels = [], callbacks = [], options = {}) {
 
     let state = false; // OFF
     let frameLoopId = null;
-      if (typeof functionState === "function") {
-setInterval(()=>{state=functionState()},0);applyStateAppearance()}
     const btn = document.createElement("button");
     btn.className = "tm-box-button";
     btn.textContent = text;
@@ -1023,6 +1021,8 @@ setInterval(()=>{state=functionState()},0);applyStateAppearance()}
     btn.style.background = bgColorOff;
     btn.style.borderColor = borderColorOff;
 
+      if (typeof functionState === "function") {
+setInterval(()=>{state=functionState()},0);applyStateAppearance()}
     function stopFrameLoop() {
         if (frameLoopId !== null) {
             cancelAnimationFrame(frameLoopId);
