@@ -86,6 +86,7 @@ window.addEventListener("keydown", function (e) {
   white-space: nowrap;
   -webkit-overflow-scrolling: touch;
   border-bottom: 1px solid rgba(255,255,255,0.06);
+  min-height: 43.186439514160156;
 }
 .tm-box-tabs-bar::-webkit-scrollbar {
   display: none;
