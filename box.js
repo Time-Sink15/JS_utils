@@ -43,6 +43,7 @@ window.addEventListener("keydown", function (e) {
   display: flex;
   flex-direction: column;
   user-select: none;
+  text-align: start;
 }
 
 .tm-box-header {
