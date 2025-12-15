@@ -1021,8 +1021,6 @@ api.addSegmentedButton = function (labels = [], callbacks = [], options = {}) {
     btn.style.background = bgColorOff;
     btn.style.borderColor = borderColorOff;
 
-      if (typeof functionState === "function") {
-setInterval(()=>{state=functionState()},0);applyStateAppearance()}
     function stopFrameLoop() {
         if (frameLoopId !== null) {
             cancelAnimationFrame(frameLoopId);
@@ -1050,6 +1048,8 @@ setInterval(()=>{state=functionState()},0);applyStateAppearance()}
         }
     }
 
+      if (typeof functionState === "function") {
+setInterval(()=>{state=functionState();applyStateAppearance()},0)}
     btn.addEventListener("click", () => {
         state = !state;
         applyStateAppearance();
