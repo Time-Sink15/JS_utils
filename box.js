@@ -600,6 +600,7 @@ window.addEventListener("keydown", function (e) {
   input.addEventListener('blur', () => {
     input.style.boxShadow = 'none';
   });
+  input.addEventListener('keydown', (e) => {e.stopPropagation();});
 
   // input events
   function safeCall(fn, ...args) {
