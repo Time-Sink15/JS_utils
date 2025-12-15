@@ -993,9 +993,8 @@ api.addSegmentedButton = function (labels = [], callbacks = [], options = {}) {
     text = "Toggle",
     functionOn = null,
     functionOff = null,
-    runOnEachFrameWhenOn = false,
-    runOnEachFrameWhenOff = false,
-    options = {}
+    options = {},
+    functionState=null
 ) {
     ensureUI();
     if (!currentRow) api.addRow();
@@ -1006,12 +1005,15 @@ api.addSegmentedButton = function (labels = [], callbacks = [], options = {}) {
         bgColorOn = "#3a7",
         bgColorOff = "#444",
         borderColorOn = "#3a7",
-        borderColorOff = "#444"
+        borderColorOff = "#444",
+        runOnEachFrameWhenOn=false,
+        runOnEachFrameWhenOff = false
     } = options;
 
     let state = false; // OFF
     let frameLoopId = null;
-
+      if ((typeof functionState === "function") {
+setInterval(()=>{state=functionState()},0)}
     const btn = document.createElement("button");
     btn.className = "tm-box-button";
     btn.textContent = text;
